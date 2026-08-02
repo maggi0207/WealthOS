@@ -2,15 +2,43 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight, ShieldCheck } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
-import { healthScore } from "@/lib/dashboard-data";
+import { HeroSkeleton } from "@/components/ui-kit/skeletons";
+import { useHealthScore } from "@/hooks/api/use-dashboard";
 import { cn } from "@/lib/utils";
 
 const CIRC = 2 * Math.PI * 42;
 
 /** Hero card: financial health score as a ring, with the driving factors below. */
 export function HealthScoreHero() {
+  const { data: healthScore, isPending, isError, refetch, isFetching } =
+    useHealthScore();
+
+  if (isPending) {
+    return <HeroSkeleton className="min-h-[11rem]" />;
+  }
+
+  if (isError || !healthScore) {
+    return (
+      <section className="surface-hero relative overflow-hidden p-4 sm:p-5">
+        <p className="text-sm font-medium">Unable to load health score</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Check your connection and try again.
+        </p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </section>
+    );
+  }
+
   const pct = Math.min(100, Math.max(0, healthScore.score));
   const dash = (pct / 100) * CIRC * 0.75;
+  const changePts = healthScore.changePts;
 
   return (
     <section className="surface-hero relative overflow-hidden p-4 sm:p-5">
@@ -53,7 +81,15 @@ export function HealthScoreHero() {
             <ShieldCheck className="size-3.5 text-primary" /> Health score
           </p>
           <p className="mt-1 font-display text-lg font-semibold leading-tight">{healthScore.grade}</p>
-          <p className="mt-0.5 text-xs text-success">+{healthScore.changePts} pts this month</p>
+          <p
+            className={cn(
+              "mt-0.5 text-xs",
+              changePts >= 0 ? "text-success" : "text-destructive",
+            )}
+          >
+            {changePts >= 0 ? "+" : ""}
+            {changePts} pts this month
+          </p>
           <Link
             to="/reports"
             className="press mt-1 inline-flex min-h-11 items-center gap-0.5 text-xs font-medium text-primary"
