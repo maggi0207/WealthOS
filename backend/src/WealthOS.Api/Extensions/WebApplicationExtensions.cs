@@ -2,7 +2,11 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using WealthOS.Api.Middleware;
+using WealthOS.Infrastructure.Documents;
+using WealthOS.Infrastructure.Goals;
 using WealthOS.Infrastructure.Identity;
+using WealthOS.Infrastructure.Income;
+using WealthOS.Infrastructure.Investments;
 using WealthOS.Infrastructure.Loans;
 using WealthOS.Infrastructure.Persistence;
 using WealthOS.Infrastructure.Properties;
@@ -55,5 +59,9 @@ public static class WebApplicationExtensions
         await IdentityDataSeeder.SeedAsync(app.Services);
         await PropertyDataSeeder.SeedAsync(app.Services);
         await LoanDataSeeder.SeedAsync(app.Services);
+        await IncomeDataSeeder.SeedAsync(app.Services);
+        await InvestmentDataSeeder.SeedAsync(app.Services);
+        await GoalDataSeeder.SeedAsync(app.Services);
+        await DocumentDataSeeder.SeedAsync(app.Services);
     }
 }

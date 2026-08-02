@@ -5,14 +5,24 @@ using Microsoft.Extensions.DependencyInjection;
 using WealthOS.Application.Authentication;
 using WealthOS.Application.Authentication.Interfaces;
 using WealthOS.Application.Common.Interfaces;
+using WealthOS.Application.Investments.Providers;
 using WealthOS.Domain.Authentication.Entities;
 using WealthOS.Domain.Authentication.Repositories;
 using WealthOS.Domain.Common.Abstractions.Repositories;
+using WealthOS.Domain.Documents.Repositories;
+using WealthOS.Domain.Goals.Repositories;
+using WealthOS.Domain.Income.Repositories;
+using WealthOS.Domain.Investments.Repositories;
 using WealthOS.Domain.Loans.Repositories;
 using WealthOS.Domain.Properties.Repositories;
 using WealthOS.Infrastructure.Authentication.Services;
 using WealthOS.Infrastructure.Dashboard;
+using WealthOS.Infrastructure.Documents.Repositories;
 using WealthOS.Infrastructure.Identity;
+using WealthOS.Infrastructure.Goals.Repositories;
+using WealthOS.Infrastructure.Income.Repositories;
+using WealthOS.Infrastructure.Investments.Providers;
+using WealthOS.Infrastructure.Investments.Repositories;
 using WealthOS.Infrastructure.Loans.Repositories;
 using WealthOS.Infrastructure.Persistence;
 using WealthOS.Infrastructure.Persistence.Interceptors;
@@ -71,6 +81,32 @@ public static class DependencyInjection
         services.AddScoped<IPropertyRepository, PropertyRepository>();
         services.AddScoped<ILoanRepository, LoanRepository>();
         services.AddScoped<ILoanProviderRepository, LoanProviderRepository>();
+        services.AddScoped<ISalaryRepository, SalaryRepository>();
+        services.AddScoped<IBusinessClientRepository, BusinessClientRepository>();
+        services.AddScoped<IBusinessProjectRepository, BusinessProjectRepository>();
+        services.AddScoped<IDeveloperRepository, DeveloperRepository>();
+        services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<IBusinessExpenseRepository, BusinessExpenseRepository>();
+        services.AddScoped<IIncomeSourceRepository, IncomeSourceRepository>();
+
+        services.AddScoped<IInvestmentProviderRepository, InvestmentProviderRepository>();
+        services.AddScoped<IInvestmentAccountRepository, InvestmentAccountRepository>();
+        services.AddScoped<IHoldingRepository, HoldingRepository>();
+        services.AddScoped<IInvestmentTransactionRepository, InvestmentTransactionRepository>();
+        services.AddScoped<IPortfolioSnapshotRepository, PortfolioSnapshotRepository>();
+        services.AddScoped<IWatchlistRepository, WatchlistRepository>();
+
+        services.AddScoped<IFinancialGoalRepository, FinancialGoalRepository>();
+        services.AddScoped<IGoalContributionRepository, GoalContributionRepository>();
+        services.AddScoped<IGoalMilestoneRepository, GoalMilestoneRepository>();
+
+        services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped<IDocumentTagRepository, DocumentTagRepository>();
+        services.AddScoped<IDocumentReminderRepository, DocumentReminderRepository>();
+
+        services.AddScoped<IInvestmentProvider, ManualInvestmentProvider>();
+        services.AddScoped<IInvestmentProvider, AngelOneProvider>();
+        services.AddScoped<IInvestmentProvider, IndiaBondsProvider>();
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
