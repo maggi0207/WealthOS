@@ -1,12 +1,13 @@
 import { CheckCircle2, GraduationCap, Home, PartyPopper, PiggyBank, ShieldCheck, Sunrise, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useGoalsOverview } from "@/hooks/api/use-goals";
 import {
   fmtDate,
   fmtINR,
   fmtINRShort,
   goalProgressPct,
-  goals,
   goalCategoryLabel,
   monthsToTarget,
   requiredMonthly,
@@ -24,9 +25,28 @@ const icons: Record<GoalCategory, LucideIcon> = {
 
 /** Goal cards with progress bars, milestones and celebration for completions. */
 export function GoalCards() {
+  const { data, isPending, isError, refetch, isFetching } = useGoalsOverview();
+
+  if (isPending) return <ListSkeleton rows={4} />;
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load goals</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-3 lg:grid-cols-2">
-      {goals.map((goal) => (
+      {data.goals.map((goal) => (
         <GoalCard key={goal.id} goal={goal} />
       ))}
     </div>

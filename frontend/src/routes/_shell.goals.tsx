@@ -7,7 +7,8 @@ import { GoalsHero } from "@/components/goals/goals-hero";
 import { MilestoneTimeline } from "@/components/goals/milestone-timeline";
 import { DefaultErrorComponent } from "@/components/ui-kit/default-error-component";
 import { SectionHeader } from "@/components/ui-kit/section-header";
-import { fmtINR, goalsSummary } from "@/lib/goals-data";
+import { useGoalsOverview } from "@/hooks/api/use-goals";
+import { fmtINR } from "@/lib/goals-data";
 
 const description =
   "Track savings goals — house, loan free, emergency fund, education and retirement — with milestones and AI pacing suggestions.";
@@ -28,6 +29,9 @@ export const Route = createFileRoute("/_shell/goals")({
 });
 
 function GoalsPage() {
+  const { data } = useGoalsOverview();
+  const monthly = data?.summary.monthlyCommitted ?? 0;
+
   return (
     <div className="space-y-6">
       <h1 className="sr-only">Goals</h1>
@@ -42,7 +46,7 @@ function GoalsPage() {
       <section>
         <SectionHeader
           title="Your goals"
-          action={<span className="tabular-nums">{fmtINR(goalsSummary.monthlyCommitted)}/mo</span>}
+          action={<span className="tabular-nums">{fmtINR(monthly)}/mo</span>}
         />
         <GoalCards />
       </section>
