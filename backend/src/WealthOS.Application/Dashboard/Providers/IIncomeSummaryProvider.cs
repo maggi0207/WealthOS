@@ -17,5 +17,5 @@ public sealed class IncomeModuleSummary
 
     public decimal MonthlyExpense { get; init; }
 
-    public string CurrencyCode { get; init; } = "USD";
+    public string CurrencyCode { get; init; } = "INR";
 }

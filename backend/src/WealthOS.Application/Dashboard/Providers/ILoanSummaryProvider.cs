@@ -17,5 +17,5 @@ public sealed class LoanModuleSummary
 
     public int LoanCount { get; init; }
 
-    public string CurrencyCode { get; init; } = "USD";
+    public string CurrencyCode { get; init; } = "INR";
 }

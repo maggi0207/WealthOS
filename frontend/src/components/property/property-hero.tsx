@@ -39,18 +39,24 @@ export function PropertyHero() {
   if (isError || !data) {
     return (
       <section className="surface-hero relative overflow-hidden p-4 sm:p-5">
-        <p className="text-sm font-medium">Unable to load property</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Check your connection and try again.
+        <p className="text-sm font-medium">
+          {isError ? "Unable to load property" : "No property yet"}
         </p>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          disabled={isFetching}
-          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
-        >
-          Retry
-        </button>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {isError
+            ? "Check your connection and try again."
+            : "Use Actions → Add property to create your first passport."}
+        </p>
+        {isError ? (
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+            className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+          >
+            Retry
+          </button>
+        ) : null}
       </section>
     );
   }

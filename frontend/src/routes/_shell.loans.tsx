@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { AddLoanFab } from "@/components/loans/add-loan-fab";
 import { AmortizationPreview } from "@/components/loans/amortization-preview";
 import { DebtHero } from "@/components/loans/debt-hero";
 import { LoanAccountCards } from "@/components/loans/loan-account-cards";
@@ -12,7 +14,7 @@ import { DefaultErrorComponent } from "@/components/ui-kit/default-error-compone
 import { SectionHeader } from "@/components/ui-kit/section-header";
 import { TileSkeleton } from "@/components/ui-kit/skeletons";
 import { useLoans } from "@/hooks/api/use-loans";
-import { fmtINR } from "@/lib/loans-data";
+import { fmtINR, type LoanAccount } from "@/lib/loans-data";
 
 const description =
   "Track your home, jewel and personal loans — balances, EMIs, amortisation, prepayment impact and reminders in INR.";
@@ -36,6 +38,7 @@ function LoansPage() {
   const { data, isPending } = useLoans();
   const accounts = data?.accounts ?? [];
   const [selectedId, setSelectedId] = useState("");
+  const [editLoan, setEditLoan] = useState<LoanAccount | null>(null);
 
   useEffect(() => {
     if (!selectedId && accounts[0]) {
@@ -62,7 +65,21 @@ function LoansPage() {
       <section>
         <SectionHeader
           title="Your loans"
-          action={<span className="tabular-nums">{fmtINR(monthlyEmi)}/mo</span>}
+          action={
+            <div className="flex items-center gap-2">
+              <span className="tabular-nums">{fmtINR(monthlyEmi)}/mo</span>
+              {selected ? (
+                <button
+                  type="button"
+                  onClick={() => setEditLoan(selected)}
+                  className="press inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-xs font-semibold text-primary"
+                >
+                  <Pencil className="size-3.5" />
+                  Edit
+                </button>
+              ) : null}
+            </div>
+          }
         />
         <LoanAccountCards
           selectedId={selected?.id ?? ""}
@@ -119,6 +136,8 @@ function LoansPage() {
         />
         <LoanInsights />
       </section>
+
+      <AddLoanFab editLoan={editLoan} onEditConsumed={() => setEditLoan(null)} />
     </div>
   );
 }

@@ -74,6 +74,7 @@ export function useCreateProperty() {
     mutationFn: (body: CreatePropertyRequestDto) => propertyService.create(body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: propertyKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -96,6 +97,7 @@ export function useUpdateProperty() {
       void queryClient.invalidateQueries({
         queryKey: propertyKeys.dashboard(variables.id),
       });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -106,6 +108,7 @@ export function useDeleteProperty() {
     mutationFn: (id: string) => propertyService.remove(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: propertyKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

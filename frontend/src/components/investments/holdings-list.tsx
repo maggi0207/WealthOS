@@ -1,6 +1,7 @@
 import { Search, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { HoldingFormSheet } from "@/components/investments/holding-form-sheet";
 import { EmptyState } from "@/components/ui-kit/empty-state";
 import { ListSkeleton } from "@/components/ui-kit/skeletons";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import {
   fmtINR,
   fmtINRShort,
   holdingCategories,
+  type Holding,
   type HoldingCategory,
 } from "@/lib/investments-data";
 import { cn } from "@/lib/utils";
@@ -18,6 +20,7 @@ export function HoldingsList() {
   const { data, isPending, isError, refetch, isFetching } = useInvestmentsOverview();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<HoldingCategory>("All");
+  const [editHolding, setEditHolding] = useState<Holding | null>(null);
 
   const accountName = (id: string) => {
     const a = data?.accounts.find((x) => x.id === id);
@@ -108,32 +111,47 @@ export function HoldingsList() {
             const gain = h.value - h.invested;
             const gainPct = (gain / h.invested) * 100;
             return (
-              <li key={h.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-[14px] font-medium">{h.name}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">
-                    {h.ticker} · {accountName(h.accountId)}
-                  </p>
-                  <p className={cn("mt-0.5 text-[11px] font-medium tabular-nums", gain >= 0 ? "text-success" : "text-destructive")}>
-                    {gain >= 0 ? "+" : "−"}
-                    {fmtINRShort(Math.abs(gain))} ({gainPct.toFixed(1)}%) overall
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-[14px] font-semibold tabular-nums">{fmtINRShort(h.value)}</p>
-                  <p className={cn("text-[11px] font-medium tabular-nums", up ? "text-success" : "text-destructive")}>
-                    {up ? "▲" : "▼"} {fmtINR(Math.abs(h.dayChange))}
-                  </p>
-                  <p className={cn("text-[10px] tabular-nums", up ? "text-success" : "text-destructive")}>
-                    {up ? "+" : ""}
-                    {h.dayChangePct.toFixed(2)}% today
-                  </p>
-                </div>
+              <li key={h.id}>
+                <button
+                  type="button"
+                  onClick={() => setEditHolding(h)}
+                  className="press grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-left"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-medium">{h.name}</p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {h.ticker} · {accountName(h.accountId)}
+                    </p>
+                    <p className={cn("mt-0.5 text-[11px] font-medium tabular-nums", gain >= 0 ? "text-success" : "text-destructive")}>
+                      {gain >= 0 ? "+" : "−"}
+                      {fmtINRShort(Math.abs(gain))} ({gainPct.toFixed(1)}%) overall
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-[14px] font-semibold tabular-nums">{fmtINRShort(h.value)}</p>
+                    <p className={cn("text-[11px] font-medium tabular-nums", up ? "text-success" : "text-destructive")}>
+                      {up ? "▲" : "▼"} {fmtINR(Math.abs(h.dayChange))}
+                    </p>
+                    <p className={cn("text-[10px] tabular-nums", up ? "text-success" : "text-destructive")}>
+                      {up ? "+" : ""}
+                      {h.dayChangePct.toFixed(2)}% today
+                    </p>
+                  </div>
+                </button>
               </li>
             );
           })}
         </ul>
       )}
+
+      <HoldingFormSheet
+        open={Boolean(editHolding)}
+        onOpenChange={(open) => {
+          if (!open) setEditHolding(null);
+        }}
+        mode="edit"
+        holding={editHolding}
+      />
     </section>
   );
 }

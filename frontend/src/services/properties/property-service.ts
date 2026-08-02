@@ -89,7 +89,7 @@ class PropertyService extends BaseApiService {
    * Resolves the primary property for the passport page (no `:id` in route).
    * Uses list → dashboard so equity is available.
    */
-  async getPrimary(): Promise<PropertyDetailView> {
+  async getPrimary(): Promise<PropertyDetailView | null> {
     if (isMockApiMode()) {
       return mapMockPropertyDashboard();
     }
@@ -97,11 +97,7 @@ class PropertyService extends BaseApiService {
     const list = await this.list({ page: 1, pageSize: 1 });
     const first = list.items[0];
     if (!first) {
-      throw new ApiError({
-        message: "No properties found for this account.",
-        status: 404,
-        code: "not_found",
-      });
+      return null;
     }
     return this.getDashboard(first.id);
   }

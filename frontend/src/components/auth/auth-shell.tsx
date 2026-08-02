@@ -1,6 +1,7 @@
 import { Gem } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { isMockApiMode } from "@/config/env";
 import { workspace } from "@/lib/mock-data";
 
 export function AuthShell({
@@ -12,6 +13,8 @@ export function AuthShell({
   subtitle: string;
   children: ReactNode;
 }) {
+  const mockMode = isMockApiMode();
+
   return (
     <div className="bg-aurora flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-md">
@@ -27,7 +30,9 @@ export function AuthShell({
           <div className="mt-6">{children}</div>
         </div>
         <p className="mt-5 text-center text-xs text-muted-foreground">
-          Frontend foundation build · mock data only
+          {mockMode
+            ? "Local UI · mock data only"
+            : "Connected to WealthOS API"}
         </p>
       </div>
     </div>

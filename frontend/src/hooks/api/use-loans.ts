@@ -78,6 +78,7 @@ export function useCreateLoan() {
     mutationFn: (body: CreateLoanRequestDto) => loanService.create(body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: loanKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -94,6 +95,7 @@ export function useUpdateLoan() {
     }) => loanService.update(id, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: loanKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -104,6 +106,7 @@ export function useDeleteLoan() {
     mutationFn: (id: string) => loanService.remove(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: loanKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

@@ -137,7 +137,7 @@ export function mapDashboardResponse(
     healthScore: mapHealthScore(dto.healthScore ?? { score: 0, grade: "", changePoints: 0, factors: [] }),
     recentActivities: (dto.recentActivities ?? []).map(mapActivity),
     quickActions: (dto.quickActions ?? []).map(mapQuickAction),
-    currencyCode: dto.currencyCode || "USD",
+    currencyCode: dto.currencyCode || "INR",
     generatedAt: dto.generatedAt,
     netWorthToday: buildNetWorthToday(netWorth, changePercent),
   };
@@ -153,7 +153,7 @@ export function mapNetWorthResponse(dto: NetWorthResponseDto): NetWorthView {
     assetValue: toNumber(dto.assetValue),
     liabilityValue: toNumber(dto.liabilityValue),
     changePercent,
-    currencyCode: dto.currencyCode || "USD",
+    currencyCode: dto.currencyCode || "INR",
     netWorthToday: buildNetWorthToday(netWorth, changePercent),
   };
 }

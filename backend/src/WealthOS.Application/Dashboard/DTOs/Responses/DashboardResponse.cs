@@ -25,7 +25,7 @@ public sealed class DashboardResponse
 
     public decimal ChangePercent { get; init; }
 
-    public string CurrencyCode { get; init; } = "USD";
+    public string CurrencyCode { get; init; } = "INR";
 
     public HealthScoreResponse HealthScore { get; init; } = new();
 
@@ -49,7 +49,7 @@ public sealed class NetWorthResponse
 
     public decimal ChangePercent { get; init; }
 
-    public string CurrencyCode { get; init; } = "USD";
+    public string CurrencyCode { get; init; } = "INR";
 }
 
 /// <summary>

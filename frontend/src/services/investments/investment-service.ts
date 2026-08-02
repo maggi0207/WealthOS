@@ -15,6 +15,16 @@ import {
   type InvestmentTxn,
 } from "@/lib/investments-data";
 import { BaseApiService } from "@/services/http/base-api-service";
+import type {
+  AddManualHoldingRequestDto,
+  CreateInvestmentAccountRequestDto,
+  HoldingDto,
+  InvestmentAccountDto,
+  InvestmentProviderListDto,
+  RecordTransactionRequestDto,
+  UpdateHoldingRequestDto,
+  UpdateInvestmentAccountRequestDto,
+} from "@/services/investments/types";
 
 export type PortfolioView = {
   invested: number;
@@ -226,6 +236,100 @@ class InvestmentService extends BaseApiService {
       })),
       allocationTotal: n(allocation.totalValue),
     };
+  }
+
+  async getProviders(): Promise<InvestmentProviderListDto> {
+    if (isMockApiMode()) {
+      return {
+        items: [
+          {
+            id: "a1111111-1111-2222-3333-444444444401",
+            kind: 0,
+            name: "Manual",
+            isEnabled: true,
+            supportsSync: false,
+          },
+        ],
+      };
+    }
+    return this.get<InvestmentProviderListDto>("/investments/providers");
+  }
+
+  async createAccount(body: CreateInvestmentAccountRequestDto): Promise<InvestmentAccountDto> {
+    if (isMockApiMode()) {
+      return {
+        id: crypto.randomUUID(),
+        providerId: body.providerId,
+        name: body.name,
+        ownerName: body.ownerName,
+        kindLabel: body.kindLabel,
+        status: body.status ?? 0,
+      };
+    }
+    return this.post<InvestmentAccountDto>("/investments/accounts", body);
+  }
+
+  async updateAccount(
+    id: string,
+    body: UpdateInvestmentAccountRequestDto,
+  ): Promise<InvestmentAccountDto> {
+    if (isMockApiMode()) {
+      return { id, providerId: "", ...body, status: body.status ?? 0 };
+    }
+    return this.put<InvestmentAccountDto>(`/investments/accounts/${id}`, body);
+  }
+
+  async deleteAccount(id: string): Promise<void> {
+    if (isMockApiMode()) return;
+    await this.delete<unknown>(`/investments/accounts/${id}`);
+  }
+
+  async addManualHolding(body: AddManualHoldingRequestDto): Promise<HoldingDto> {
+    if (isMockApiMode()) {
+      return {
+        id: crypto.randomUUID(),
+        accountId: body.accountId,
+        name: body.name,
+        symbol: body.symbol,
+        category: body.category,
+        investmentType: body.investmentType,
+        quantity: body.quantity,
+        averageCost: body.averageCost,
+        investedAmount: body.investedAmount,
+        currentPrice: body.currentPrice,
+        currentValue: body.currentValue,
+      };
+    }
+    return this.post<HoldingDto>("/investments/manual-holding", body);
+  }
+
+  async updateHolding(id: string, body: UpdateHoldingRequestDto): Promise<HoldingDto> {
+    if (isMockApiMode()) {
+      return {
+        id,
+        accountId: "",
+        name: body.name,
+        symbol: body.symbol,
+        category: body.category,
+        investmentType: body.investmentType,
+        quantity: body.quantity,
+        averageCost: body.averageCost,
+        investedAmount: body.investedAmount,
+        currentPrice: body.currentPrice,
+        currentValue: body.currentValue,
+      };
+    }
+    return this.put<HoldingDto>(`/investments/holdings/${id}`, body);
+  }
+
+  async deleteHolding(id: string): Promise<void> {
+    if (isMockApiMode()) return;
+    await this.delete<unknown>(`/investments/holdings/${id}`);
+  }
+
+  async recordTransaction(body: RecordTransactionRequestDto): Promise<unknown> {
+    if (isMockApiMode()) return {};
+    return this.post<unknown>("/investments/transactions", body);
   }
 }
 

@@ -68,27 +68,27 @@ function ThisMonthStats() {
     );
   }
 
-  const { kpis } = data;
+  const { kpis, currencyCode } = data;
 
   return (
     <div className="grid grid-cols-3 gap-2.5">
       <CompactStat
         label="Income"
-        value={fmtCurrency(kpis.monthlyIncome.value)}
+        value={fmtCurrency(kpis.monthlyIncome.value, { currencyCode })}
         delta={kpis.monthlyIncome.changePct}
         icon={Banknote}
         tone="positive"
       />
       <CompactStat
         label="Expenses"
-        value={fmtCurrency(kpis.monthlyExpenses.value)}
+        value={fmtCurrency(kpis.monthlyExpenses.value, { currencyCode })}
         delta={kpis.monthlyExpenses.changePct}
         icon={Receipt}
         tone="negative"
       />
       <CompactStat
         label="Cash flow"
-        value={fmtCurrency(kpis.cashFlow.value)}
+        value={fmtCurrency(kpis.cashFlow.value, { currencyCode })}
         delta={kpis.cashFlow.changePct}
         icon={Activity}
         tone="positive"

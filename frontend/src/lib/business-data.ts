@@ -304,6 +304,7 @@ export const businessInsights: BusinessInsight[] = [
 
 export type QuickActionId =
   | "add-client"
+  | "add-project"
   | "add-developer"
   | "record-payment"
   | "record-expense"
@@ -311,6 +312,7 @@ export type QuickActionId =
 
 export const quickActions: { id: QuickActionId; label: string; hint: string }[] = [
   { id: "add-client", label: "Add client", hint: "New retainer or project" },
+  { id: "add-project", label: "Add project", hint: "Link work to a client" },
   { id: "add-developer", label: "Add developer", hint: "Assign to a client" },
   { id: "record-payment", label: "Record payment", hint: "Client payment received" },
   { id: "record-expense", label: "Record expense", hint: "Tools, cloud, office" },

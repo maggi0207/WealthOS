@@ -156,10 +156,17 @@ export type CreateLoanRequestDto = {
   interestRate: number;
   emiAmount: number;
   tenureMonths: number;
+  remainingTenureMonths?: number;
   startDate: string;
+  nextEmiDate?: string;
+  endDate?: string;
   autoDebit?: boolean;
   accountNumber?: string;
   notes?: string;
+  currencyCode?: string;
+  interestType?: number;
+  paymentFrequency?: number;
+  status?: number;
 };
 
 export type UpdateLoanRequestDto = Partial<CreateLoanRequestDto> & {

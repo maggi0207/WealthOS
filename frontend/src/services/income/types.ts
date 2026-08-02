@@ -149,6 +149,97 @@ export type ExpenseListDto = {
   totalCount: number;
 };
 
+export type ClientResponseDto = ClientDto & {
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  notes?: string | null;
+};
+
+export type ProjectDto = {
+  id: string;
+  clientId: string;
+  clientName?: string;
+  name: string;
+  description?: string | null;
+  status: number | string;
+  startDate: string;
+  endDate?: string | null;
+  monthlyRevenue?: number | null;
+  currencyCode: string;
+};
+
+export type ProjectListDto = {
+  items: ProjectDto[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+};
+
+export type InvoiceItemDto = {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+export type InvoiceDto = {
+  id: string;
+  clientId: string;
+  clientName: string;
+  projectId?: string | null;
+  invoiceNumber: string;
+  issueDate: string;
+  dueDate: string;
+  status: number | string;
+  subTotal: number;
+  amountPaid: number;
+  outstandingAmount: number;
+  currencyCode: string;
+  notes?: string | null;
+  items?: InvoiceItemDto[];
+};
+
+export type InvoiceListDto = {
+  items: InvoiceDto[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+};
+
+export type SalaryResponseDto = {
+  id: string;
+  memberName: string;
+  employer: string;
+  role: string;
+  monthlyAmount: number;
+  currencyCode: string;
+  lastCreditedOn?: string | null;
+  nextExpectedOn?: string | null;
+  status: number | string;
+  paymentId?: string | null;
+  notes?: string | null;
+};
+
+export type DeveloperResponseDto = DeveloperDto & {
+  notes?: string | null;
+};
+
+export type ExpenseResponseDto = ExpenseDto & {
+  currencyCode?: string;
+  notes?: string | null;
+};
+
+export type InvoicePaymentResponseDto = {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  paidOn: string;
+  method: number | string;
+  reference?: string | null;
+  notes?: string | null;
+};
+
 /* ------------------------------- View models ------------------------------ */
 
 export type CashFlowView = CashFlowSummary & {

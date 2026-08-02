@@ -17,5 +17,5 @@ public sealed class InvestmentModuleSummary
 
     public int HoldingCount { get; init; }
 
-    public string CurrencyCode { get; init; } = "USD";
+    public string CurrencyCode { get; init; } = "INR";
 }

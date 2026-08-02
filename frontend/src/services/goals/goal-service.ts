@@ -8,6 +8,13 @@ import {
   type Milestone,
 } from "@/lib/goals-data";
 import { BaseApiService } from "@/services/http/base-api-service";
+import type {
+  CreateGoalRequestDto,
+  GoalContributionDto,
+  GoalDto,
+  RecordGoalContributionRequestDto,
+  UpdateGoalRequestDto,
+} from "@/services/goals/types";
 
 export type GoalsSummaryView = {
   totalSaved: number;
@@ -153,6 +160,52 @@ class GoalService extends BaseApiService {
       },
       goals,
     };
+  }
+
+  async create(body: CreateGoalRequestDto): Promise<GoalDto> {
+    if (isMockApiMode()) {
+      return {
+        id: crypto.randomUUID(),
+        name: body.name,
+        category: body.category,
+        targetAmount: body.targetAmount,
+        currentAmount: body.currentAmount,
+        targetDate: body.targetDate,
+        startedOn: body.startedOn,
+        monthlyContribution: body.monthlyContribution,
+        description: body.description,
+      };
+    }
+    return this.post<GoalDto>("/goals", body);
+  }
+
+  async update(id: string, body: UpdateGoalRequestDto): Promise<GoalDto> {
+    if (isMockApiMode()) {
+      return { id, ...body };
+    }
+    return this.put<GoalDto>(`/goals/${id}`, body);
+  }
+
+  async remove(id: string): Promise<void> {
+    if (isMockApiMode()) return;
+    await this.delete<unknown>(`/goals/${id}`);
+  }
+
+  async recordContribution(
+    goalId: string,
+    body: RecordGoalContributionRequestDto,
+  ): Promise<GoalContributionDto> {
+    if (isMockApiMode()) {
+      return {
+        id: crypto.randomUUID(),
+        goalId,
+        amount: body.amount,
+        contributedOn: body.contributedOn,
+        notes: body.notes,
+        source: body.source,
+      };
+    }
+    return this.post<GoalContributionDto>(`/goals/${goalId}/contributions`, body);
   }
 }
 

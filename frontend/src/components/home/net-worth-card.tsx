@@ -46,7 +46,7 @@ export function NetWorthCard() {
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Net worth</p>
             <p className="mt-1 truncate font-display text-[1.9rem] font-semibold leading-none tabular-nums sm:text-4xl">
-              {fmtCurrency(data.netWorth)}
+              {fmtCurrency(data.netWorth, { currencyCode: data.currencyCode })}
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
               <span
@@ -56,7 +56,9 @@ export function NetWorthCard() {
                 )}
               >
                 {up ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
-                {fmtCurrency(Math.abs(data.netWorthToday.amount))} (
+                {fmtCurrency(Math.abs(data.netWorthToday.amount), {
+                  currencyCode: data.currencyCode,
+                })} (
                 {Math.abs(data.netWorthToday.changePct).toFixed(2)}%)
               </span>
               <span className="text-muted-foreground">today</span>
@@ -98,13 +100,13 @@ export function NetWorthCard() {
         <Link to="/assets" className="press px-4 py-3 sm:px-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Assets</p>
           <p className="mt-0.5 truncate font-display text-base font-semibold tabular-nums">
-            {fmtCompact(data.assetValue)}
+            {fmtCompact(data.assetValue, data.currencyCode)}
           </p>
         </Link>
         <Link to="/loans" className="press px-4 py-3 sm:px-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Liabilities</p>
           <p className="mt-0.5 truncate font-display text-base font-semibold tabular-nums">
-            {fmtCompact(data.liabilityValue)}
+            {fmtCompact(data.liabilityValue, data.currencyCode)}
           </p>
         </Link>
       </div>

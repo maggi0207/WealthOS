@@ -1,22 +1,25 @@
 using Microsoft.Extensions.DependencyInjection;
 using WealthOS.Application.Dashboard.Providers;
-using WealthOS.Infrastructure.Dashboard.Providers;
+using WealthOS.Infrastructure.Documents.Providers;
+using WealthOS.Infrastructure.Income.Providers;
+using WealthOS.Infrastructure.Investments.Providers;
 using WealthOS.Infrastructure.Loans.Providers;
+using WealthOS.Infrastructure.Properties.Providers;
 
 namespace WealthOS.Infrastructure.Dashboard;
 
 /// <summary>
-/// Registers Dashboard infrastructure adapters (module providers; mocks until modules land).
+/// Registers Dashboard infrastructure adapters that read live module totals.
 /// </summary>
 public static class DashboardInfrastructureExtensions
 {
     public static IServiceCollection AddDashboardInfrastructure(this IServiceCollection services)
     {
-        services.AddScoped<IPropertySummaryProvider, MockPropertySummaryProvider>();
+        services.AddScoped<IPropertySummaryProvider, PropertySummaryProvider>();
         services.AddScoped<ILoanSummaryProvider, LoanSummaryProvider>();
-        services.AddScoped<IInvestmentSummaryProvider, MockInvestmentSummaryProvider>();
-        services.AddScoped<IIncomeSummaryProvider, MockIncomeSummaryProvider>();
-        services.AddScoped<IDocumentSummaryProvider, MockDocumentSummaryProvider>();
+        services.AddScoped<IInvestmentSummaryProvider, InvestmentSummaryProvider>();
+        services.AddScoped<IIncomeSummaryProvider, IncomeSummaryProvider>();
+        services.AddScoped<IDocumentSummaryProvider, DocumentSummaryProvider>();
 
         return services;
     }

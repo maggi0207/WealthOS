@@ -208,21 +208,13 @@ public sealed class DashboardService : IDashboardService
 
     private async Task<FinancialSummary> BuildFinancialSummaryAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var propertyTask = _propertySummaryProvider.GetSummaryAsync(userId, cancellationToken);
-        var loanTask = _loanSummaryProvider.GetSummaryAsync(userId, cancellationToken);
-        var investmentTask = _investmentSummaryProvider.GetSummaryAsync(userId, cancellationToken);
-        var incomeTask = _incomeSummaryProvider.GetSummaryAsync(userId, cancellationToken);
+        // Providers share a scoped DbContext — query sequentially to avoid concurrent use.
+        var property = await _propertySummaryProvider.GetSummaryAsync(userId, cancellationToken);
+        var loan = await _loanSummaryProvider.GetSummaryAsync(userId, cancellationToken);
+        var investment = await _investmentSummaryProvider.GetSummaryAsync(userId, cancellationToken);
+        var income = await _incomeSummaryProvider.GetSummaryAsync(userId, cancellationToken);
 
-        await Task.WhenAll(propertyTask, loanTask, investmentTask, incomeTask);
-
-        var property = await propertyTask;
-        var loan = await loanTask;
-        var investment = await investmentTask;
-        var income = await incomeTask;
-
-        // Cash and other liquid assets are implied so totals align with frontend demo KPIs.
-        var otherAssets = 377_000m;
-        var assetValue = property.TotalValue + investment.TotalValue + otherAssets;
+        var assetValue = property.TotalValue + investment.TotalValue;
         var liabilityValue = loan.TotalBalance;
         var netWorth = assetValue - liabilityValue;
 
@@ -236,9 +228,26 @@ public sealed class DashboardService : IDashboardService
             InvestmentValue = investment.TotalValue,
             PropertyValue = property.TotalValue,
             LoanBalance = loan.TotalBalance,
-            CurrencyCode = income.CurrencyCode,
+            CurrencyCode = ResolveCurrencyCode(
+                property.CurrencyCode,
+                loan.CurrencyCode,
+                investment.CurrencyCode,
+                income.CurrencyCode),
             ChangePercent = DemoChangePercent,
         };
+    }
+
+    private static string ResolveCurrencyCode(params string[] codes)
+    {
+        foreach (var code in codes)
+        {
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                return code.Trim().ToUpperInvariant();
+            }
+        }
+
+        return "INR";
     }
 
     private static HealthScore BuildHealthScore(FinancialSummary financials, DocumentModuleSummary documents)

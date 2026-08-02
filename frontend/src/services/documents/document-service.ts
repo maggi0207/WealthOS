@@ -10,6 +10,11 @@ import {
   type VaultDocument,
 } from "@/lib/documents-data";
 import { BaseApiService } from "@/services/http/base-api-service";
+import type {
+  CreateDocumentRequestDto,
+  DocumentDto,
+  UpdateDocumentRequestDto,
+} from "@/services/documents/types";
 
 export type VaultSummaryView = {
   total: number;
@@ -160,6 +165,33 @@ class DocumentService extends BaseApiService {
       recent: recentDocs.length > 0 ? recentDocs : documents.slice(0, 5),
       renewals,
     };
+  }
+
+  async create(body: CreateDocumentRequestDto): Promise<DocumentDto> {
+    if (isMockApiMode()) {
+      return {
+        id: crypto.randomUUID(),
+        title: body.title,
+        category: body.category,
+        owner: body.owner,
+        status: body.status ?? 1,
+        description: body.description,
+        notes: body.notes,
+      };
+    }
+    return this.post<DocumentDto>("/documents", body);
+  }
+
+  async update(id: string, body: UpdateDocumentRequestDto): Promise<DocumentDto> {
+    if (isMockApiMode()) {
+      return { id, ...body, status: body.status ?? 1 };
+    }
+    return this.put<DocumentDto>(`/documents/${id}`, body);
+  }
+
+  async remove(id: string): Promise<void> {
+    if (isMockApiMode()) return;
+    await this.delete<unknown>(`/documents/${id}`);
   }
 }
 

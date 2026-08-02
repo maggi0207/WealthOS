@@ -22,7 +22,7 @@ public sealed class FinancialSummary
 
     public decimal LoanBalance { get; init; }
 
-    public string CurrencyCode { get; init; } = "USD";
+    public string CurrencyCode { get; init; } = "INR";
 
     public decimal ChangePercent { get; init; }
 }

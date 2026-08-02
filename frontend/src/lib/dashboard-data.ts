@@ -7,21 +7,30 @@ export type Trend = { label: string; value: number };
 
 export const currency = "USD";
 
-export const fmtCurrency = (value: number, opts?: Intl.NumberFormatOptions) =>
-  new Intl.NumberFormat("en-US", {
+export const fmtCurrency = (
+  value: number,
+  opts?: Intl.NumberFormatOptions & { currencyCode?: string },
+) => {
+  const { currencyCode, ...formatOpts } = opts ?? {};
+  const code = currencyCode || currency;
+  const locale = code === "INR" ? "en-IN" : "en-US";
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency,
+    currency: code,
     maximumFractionDigits: 0,
-    ...opts,
+    ...formatOpts,
   }).format(value);
+};
 
-export const fmtCompact = (value: number) =>
-  new Intl.NumberFormat("en-US", {
+export const fmtCompact = (value: number, currencyCode = currency) => {
+  const locale = currencyCode === "INR" ? "en-IN" : "en-US";
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency,
+    currency: currencyCode,
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);
+};
 
 export const fmtPct = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 
