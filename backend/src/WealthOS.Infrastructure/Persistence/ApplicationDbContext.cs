@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using WealthOS.Domain.AI.Entities;
 using WealthOS.Domain.Authentication.Entities;
 using WealthOS.Domain.Documents.Entities;
 using WealthOS.Domain.Goals.Entities;
@@ -10,6 +11,7 @@ using WealthOS.Domain.Investments.Entities;
 using WealthOS.Domain.Loans.Entities;
 using WealthOS.Domain.Notifications.Entities;
 using WealthOS.Domain.Properties.Entities;
+using WealthOS.Domain.Reports.Entities;
 
 namespace WealthOS.Infrastructure.Persistence;
 
@@ -131,6 +133,36 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
     public DbSet<Reminder> Reminders => Set<Reminder>();
 
     public DbSet<BackgroundJobLog> BackgroundJobLogs => Set<BackgroundJobLog>();
+
+    public DbSet<AIConversation> AIConversations => Set<AIConversation>();
+
+    public DbSet<AIMessage> AIMessages => Set<AIMessage>();
+
+    public DbSet<ConversationSession> ConversationSessions => Set<ConversationSession>();
+
+    public DbSet<AITool> AITools => Set<AITool>();
+
+    public DbSet<AIToolExecution> AIToolExecutions => Set<AIToolExecution>();
+
+    public DbSet<AIContext> AIContexts => Set<AIContext>();
+
+    public DbSet<AIMemory> AIMemories => Set<AIMemory>();
+
+    public DbSet<AIRecommendation> AIRecommendations => Set<AIRecommendation>();
+
+    public DbSet<AIInsight> AIInsights => Set<AIInsight>();
+
+    public DbSet<PromptTemplate> PromptTemplates => Set<PromptTemplate>();
+
+    public DbSet<ReportDefinition> ReportDefinitions => Set<ReportDefinition>();
+
+    public DbSet<Report> Reports => Set<Report>();
+
+    public DbSet<ReportExecution> ReportExecutions => Set<ReportExecution>();
+
+    public DbSet<ReportSnapshot> ReportSnapshots => Set<ReportSnapshot>();
+
+    public DbSet<ReportExport> ReportExports => Set<ReportExport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

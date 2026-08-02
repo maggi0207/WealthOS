@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using WealthOS.Api.Middleware;
+using WealthOS.Infrastructure.AI;
 using WealthOS.Infrastructure.BackgroundJobs;
 using WealthOS.Infrastructure.Documents;
 using WealthOS.Infrastructure.Goals;
@@ -12,6 +13,7 @@ using WealthOS.Infrastructure.Loans;
 using WealthOS.Infrastructure.Notifications;
 using WealthOS.Infrastructure.Persistence;
 using WealthOS.Infrastructure.Properties;
+using WealthOS.Infrastructure.Reports;
 using HealthChecks.UI.Client;
 
 namespace WealthOS.Api.Extensions;
@@ -71,5 +73,7 @@ public static class WebApplicationExtensions
         await GoalDataSeeder.SeedAsync(app.Services);
         await DocumentDataSeeder.SeedAsync(app.Services);
         await NotificationDataSeeder.SeedAsync(app.Services);
+        await AIDataSeeder.SeedAsync(app.Services);
+        await ReportsDataSeeder.SeedAsync(app.Services);
     }
 }

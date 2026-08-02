@@ -16,6 +16,7 @@ using WealthOS.Domain.Investments.Repositories;
 using WealthOS.Domain.Loans.Repositories;
 using WealthOS.Domain.Notifications.Repositories;
 using WealthOS.Domain.Properties.Repositories;
+using WealthOS.Infrastructure.AI;
 using WealthOS.Infrastructure.Authentication.Services;
 using WealthOS.Infrastructure.BackgroundJobs;
 using WealthOS.Infrastructure.Dashboard;
@@ -31,6 +32,7 @@ using WealthOS.Infrastructure.Persistence;
 using WealthOS.Infrastructure.Persistence.Interceptors;
 using WealthOS.Infrastructure.Persistence.Repositories;
 using WealthOS.Infrastructure.Properties.Repositories;
+using WealthOS.Infrastructure.Reports;
 
 namespace WealthOS.Infrastructure;
 
@@ -125,6 +127,8 @@ public static class DependencyInjection
 
         services.AddAuthenticationOptions(configuration);
         services.AddDashboardInfrastructure();
+        services.AddAIInfrastructure();
+        services.AddReportsInfrastructure();
         services.AddHangfireBackgroundJobs(configuration);
 
         return services;
