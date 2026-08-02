@@ -1,13 +1,38 @@
 import { BellRing, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 
-import { fmtDate, fmtINR, loanReminders } from "@/lib/loans-data";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useUpcomingLoanPayments } from "@/hooks/api/use-loans";
+import { fmtDate, fmtINR } from "@/lib/loans-data";
 
 /** Upcoming EMI reminders with a mock notification toggle. */
 export function LoanReminders() {
+  const { data, isPending, isError, refetch, isFetching } =
+    useUpcomingLoanPayments();
+
+  if (isPending) {
+    return <ListSkeleton rows={3} />;
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load upcoming EMIs</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <ul className="surface-tile divide-y divide-border/50 overflow-hidden">
-      {loanReminders.map((item) => (
+      {data.map((item) => (
         <li key={item.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
           <span
             className={`grid size-9 shrink-0 place-items-center rounded-xl ${

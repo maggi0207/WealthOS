@@ -1,11 +1,38 @@
 import { ShieldCheck, TrendingDown } from "lucide-react";
 
+import { HeroSkeleton } from "@/components/ui-kit/skeletons";
+import { useLoanSummary } from "@/hooks/api/use-loans";
 import { useCountUp } from "@/hooks/use-count-up";
-import { fmtINR, fmtINRShort, loansRepaidPct, loansTotals } from "@/lib/loans-data";
+import { fmtINR, fmtINRShort } from "@/lib/loans-data";
 
 /** Debt overview hero — outstanding, repaid progress and EMI outflow. */
 export function DebtHero() {
-  const value = useCountUp(loansTotals.outstanding);
+  const { data, isPending, isError, refetch, isFetching } = useLoanSummary();
+  const outstanding = data?.outstanding ?? 0;
+  const value = useCountUp(outstanding);
+
+  if (isPending) {
+    return <HeroSkeleton className="min-h-[12rem]" />;
+  }
+
+  if (isError || !data) {
+    return (
+      <section className="surface-hero p-4 sm:p-5">
+        <p className="text-sm font-medium">Unable to load loan summary</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Check your connection and try again.
+        </p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section className="surface-hero p-4 sm:p-5">
@@ -19,27 +46,27 @@ export function DebtHero() {
           </p>
           <p className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium text-success">
             <TrendingDown className="size-3.5" />
-            {loansRepaidPct}% of {fmtINRShort(loansTotals.borrowed)} repaid
+            {data.repaidPct}% of {fmtINRShort(data.borrowed)} repaid
           </p>
         </div>
         <div className="shrink-0 rounded-xl bg-primary/10 px-3 py-2 text-right">
           <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Debt free</p>
-          <p className="text-[13px] font-semibold">{loansTotals.debtFreeBy}</p>
+          <p className="text-[13px] font-semibold">{data.debtFreeBy}</p>
         </div>
       </div>
 
       <div className="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-muted">
         <div
           className="h-full rounded-full bg-gradient-to-r from-success/80 to-success transition-[width] duration-700 ease-out"
-          style={{ width: `${loansRepaidPct}%` }}
+          style={{ width: `${data.repaidPct}%` }}
         />
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
         {[
-          { label: "Monthly EMI", value: fmtINR(loansTotals.monthlyEmi) },
-          { label: "Borrowed", value: fmtINRShort(loansTotals.borrowed) },
-          { label: "Loans", value: "3" },
+          { label: "Monthly EMI", value: fmtINR(data.monthlyEmi) },
+          { label: "Borrowed", value: fmtINRShort(data.borrowed) },
+          { label: "Loans", value: String(data.loanCount) },
         ].map((cell) => (
           <div key={cell.label} className="rounded-xl bg-muted/40 px-3 py-2">
             <p className="truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
@@ -52,7 +79,7 @@ export function DebtHero() {
 
       <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <ShieldCheck className="size-3.5 shrink-0 text-success" />
-        Mock data — no lender is connected in this demo.
+        Live portfolio totals when connected; fixtures in mock mode.
       </p>
     </section>
   );

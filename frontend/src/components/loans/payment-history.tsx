@@ -1,7 +1,9 @@
 import { CheckCircle2, Clock3, XCircle, type LucideIcon } from "lucide-react";
 
 import { EmptyState } from "@/components/ui-kit/empty-state";
-import { fmtDate, fmtINR, loanPayments, type LoanPayment } from "@/lib/loans-data";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useLoanPayments } from "@/hooks/api/use-loans";
+import { fmtDate, fmtINR, type LoanPayment } from "@/lib/loans-data";
 
 const statusIcon: Record<LoanPayment["status"], LucideIcon> = {
   paid: CheckCircle2,
@@ -15,9 +17,32 @@ const statusTone: Record<LoanPayment["status"], string> = {
   failed: "bg-destructive/12 text-destructive",
 };
 
-/** Payment history for a loan (or all loans when loanId is omitted). */
-export function PaymentHistory({ loanId }: { loanId?: string }) {
-  const rows = loanId ? loanPayments.filter((p) => p.loanId === loanId) : loanPayments;
+/** Payment history for a loan. */
+export function PaymentHistory({ loanId }: { loanId: string }) {
+  const { data, isPending, isError, refetch, isFetching } =
+    useLoanPayments(loanId);
+
+  if (isPending) {
+    return <ListSkeleton rows={4} />;
+  }
+
+  if (isError) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load payments</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const rows = data ?? [];
 
   if (rows.length === 0) {
     return (

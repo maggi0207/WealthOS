@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AmortizationPreview } from "@/components/loans/amortization-preview";
 import { DebtHero } from "@/components/loans/debt-hero";
@@ -10,7 +10,9 @@ import { PaymentHistory } from "@/components/loans/payment-history";
 import { PrepaymentSimulator } from "@/components/loans/prepayment-simulator";
 import { DefaultErrorComponent } from "@/components/ui-kit/default-error-component";
 import { SectionHeader } from "@/components/ui-kit/section-header";
-import { fmtINR, loanAccounts, loansTotals } from "@/lib/loans-data";
+import { TileSkeleton } from "@/components/ui-kit/skeletons";
+import { useLoans } from "@/hooks/api/use-loans";
+import { fmtINR } from "@/lib/loans-data";
 
 const description =
   "Track your home, jewel and personal loans — balances, EMIs, amortisation, prepayment impact and reminders in INR.";
@@ -31,8 +33,25 @@ export const Route = createFileRoute("/_shell/loans")({
 });
 
 function LoansPage() {
-  const [selectedId, setSelectedId] = useState(loanAccounts[0]!.id);
-  const selected = loanAccounts.find((l) => l.id === selectedId) ?? loanAccounts[0]!;
+  const { data, isPending } = useLoans();
+  const accounts = data?.accounts ?? [];
+  const [selectedId, setSelectedId] = useState("");
+
+  useEffect(() => {
+    if (!selectedId && accounts[0]) {
+      setSelectedId(accounts[0].id);
+    } else if (
+      selectedId &&
+      accounts.length > 0 &&
+      !accounts.some((a) => a.id === selectedId)
+    ) {
+      setSelectedId(accounts[0]!.id);
+    }
+  }, [accounts, selectedId]);
+
+  const selected =
+    accounts.find((l) => l.id === selectedId) ?? accounts[0] ?? null;
+  const monthlyEmi = data?.totals.monthlyEmi ?? 0;
 
   return (
     <div className="space-y-6">
@@ -43,20 +62,32 @@ function LoansPage() {
       <section>
         <SectionHeader
           title="Your loans"
-          action={<span className="tabular-nums">{fmtINR(loansTotals.monthlyEmi)}/mo</span>}
+          action={<span className="tabular-nums">{fmtINR(monthlyEmi)}/mo</span>}
         />
-        <LoanAccountCards selectedId={selectedId} onSelect={setSelectedId} />
+        <LoanAccountCards
+          selectedId={selected?.id ?? ""}
+          onSelect={setSelectedId}
+        />
       </section>
 
-      <section>
-        <SectionHeader title="Amortisation preview" action={<span>{selected.lender}</span>} />
-        <AmortizationPreview loan={selected} />
-      </section>
+      {isPending || !selected ? (
+        <TileSkeleton className="h-40" />
+      ) : (
+        <>
+          <section>
+            <SectionHeader
+              title="Amortisation preview"
+              action={<span>{selected.lender}</span>}
+            />
+            <AmortizationPreview loan={selected} />
+          </section>
 
-      <section>
-        <SectionHeader title="Prepayment simulator" />
-        <PrepaymentSimulator loan={selected} />
-      </section>
+          <section>
+            <SectionHeader title="Prepayment simulator" />
+            <PrepaymentSimulator loan={selected} />
+          </section>
+        </>
+      )}
 
       <section>
         <SectionHeader title="Upcoming EMIs" />
@@ -64,8 +95,17 @@ function LoansPage() {
       </section>
 
       <section>
-        <SectionHeader title="Payment history" action={<span>{selected.accountMask}</span>} />
-        <PaymentHistory loanId={selected.id} />
+        <SectionHeader
+          title="Payment history"
+          action={
+            selected ? <span>{selected.accountMask}</span> : undefined
+          }
+        />
+        {selected ? (
+          <PaymentHistory loanId={selected.id} />
+        ) : (
+          <TileSkeleton className="h-32" />
+        )}
       </section>
 
       <section>

@@ -1,10 +1,11 @@
 import { CalendarClock, Coins, Home, Landmark, type LucideIcon } from "lucide-react";
 
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useLoans } from "@/hooks/api/use-loans";
 import {
   fmtDateShort,
   fmtINR,
   fmtINRShort,
-  loanAccounts,
   loanKindLabel,
   loanPaidPct,
   type LoanKind,
@@ -24,9 +25,31 @@ export function LoanAccountCards({
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
+  const { data, isPending, isError, refetch, isFetching } = useLoans();
+
+  if (isPending) {
+    return <ListSkeleton rows={3} />;
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load loans</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-2.5 lg:grid-cols-3">
-      {loanAccounts.map((loan) => {
+      {data.accounts.map((loan) => {
         const Icon = icons[loan.kind];
         const paid = loanPaidPct(loan);
         const active = loan.id === selectedId;
