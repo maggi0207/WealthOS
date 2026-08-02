@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wealthos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-wealthos}
+      POSTGRES_USER: ${POSTGRES_USER:-wealthos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - wealthos_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wealthos} -d ${POSTGRES_DB:-wealthos}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wealthos
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: wealthos-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-wealthos};Username=${POSTGRES_USER:-wealthos};Password=${POSTGRES_PASSWORD}
+      Jwt__Issuer: ${JWT_ISSUER:-https://api.wealthos.app}
+      Jwt__Audience: ${JWT_AUDIENCE:-wealthos-api}
+      Jwt__SecretKey: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY min 32 chars}
+      Jwt__AccessTokenExpirationMinutes: ${JWT_ACCESS_MINUTES:-15}
+      Jwt__RefreshTokenExpirationDays: ${JWT_REFRESH_DAYS:-7}
+      Cors__AllowedOrigins__0: ${CORS_ORIGIN_0:?set CORS_ORIGIN_0}
+      Hangfire__WorkerCount: ${HANGFIRE_WORKER_COUNT:-2}
+      AngelOne__ApiKey: ${ANGELONE_API_KEY:-}
+      AngelOne__ClientCode: ${ANGELONE_CLIENT_CODE:-}
+      AngelOne__EnableLiveSync: ${ANGELONE_ENABLE_LIVE_SYNC:-false}
+      AngelOne__RefreshTokenSecretName: ${ANGELONE_REFRESH_TOKEN_SECRET_NAME:-}
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    networks:
+      - wealthos
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: wealthos-nginx
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ${TLS_CERT_DIR:-./nginx/certs}:/etc/nginx/certs:ro
+    networks:
+      - wealthos
+
+volumes:
+  wealthos_postgres_data:
+
+networks:
+  wealthos:
+    driver: bridge

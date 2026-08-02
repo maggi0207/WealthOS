@@ -8,6 +8,10 @@ Project documentation for WealthOS.
 - Decision records (ADRs), runbooks, and onboarding guides
 - Product, security, and operational documentation
 
+## Guides
+
+- [Hostinger VPS deployment](./HOSTINGER_DEPLOYMENT.md) — Docker Compose production stack, Nginx TLS, CI/CD readiness
+
 ## Notes
 
 Keep documentation close to the repository so engineering and AI workflows share the same source of truth.
