@@ -1,12 +1,41 @@
 import { Compass, ExternalLink, Map, Navigation } from "lucide-react";
 import { toast } from "sonner";
 
-import { propertyDetail } from "@/lib/property-data";
-
-const mapsQuery = encodeURIComponent(propertyDetail.address);
+import { TileSkeleton } from "@/components/ui-kit/skeletons";
+import { usePrimaryProperty } from "@/hooks/api/use-properties";
 
 /** Location block — address, maps actions, distance and street view placeholders. */
 export function LocationCard() {
+  const { data, isPending, isError, refetch, isFetching } = usePrimaryProperty();
+
+  if (isPending) {
+    return <TileSkeleton className="h-48" />;
+  }
+
+  if (isError || !data) {
+    return (
+      <section className="surface-tile px-4 py-5 text-center">
+        <p className="text-sm font-medium">Unable to load location</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </section>
+    );
+  }
+
+  const mapsQuery = encodeURIComponent(data.address);
+  const mapsHref =
+    data.googleMapsUrl ||
+    `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+  const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`;
+  const title = data.locality || data.city || data.name;
+  const subtitle = [data.city, data.postalCode].filter(Boolean).join(" · ");
+
   return (
     <section className="surface-tile overflow-hidden">
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 p-4">
@@ -14,15 +43,19 @@ export function LocationCard() {
           <Map className="size-5" />
         </span>
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold">Anna Avenue</p>
-          <p className="text-[12px] text-muted-foreground">Adyar · Chennai 600020</p>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">Ward 175 · Zone 13 · 40 ft main road</p>
+          <p className="text-[15px] font-semibold">{title}</p>
+          {subtitle ? (
+            <p className="text-[12px] text-muted-foreground">{subtitle}</p>
+          ) : null}
+          {data.state ? (
+            <p className="mt-1.5 text-[11px] text-muted-foreground">{data.state}</p>
+          ) : null}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 px-4">
         <a
-          href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
+          href={mapsHref}
           target="_blank"
           rel="noreferrer"
           className="press inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground"
@@ -31,7 +64,7 @@ export function LocationCard() {
           Google Maps
         </a>
         <a
-          href={`https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`}
+          href={directionsHref}
           target="_blank"
           rel="noreferrer"
           className="press inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-muted text-[13px] font-semibold"

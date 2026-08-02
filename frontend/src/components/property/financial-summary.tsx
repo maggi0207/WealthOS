@@ -1,18 +1,46 @@
-import { appreciation, fmtINR, fmtINRShort, propertyDetail, rental } from "@/lib/property-data";
-
-const stats = [
-  { label: "Current value", value: fmtINR(propertyDetail.currentValue), tone: "" },
-  { label: "Purchase price", value: fmtINR(propertyDetail.purchasePrice), tone: "" },
-  {
-    label: "Appreciation",
-    value: `${fmtINRShort(appreciation.absolute)} · ${appreciation.pct.toFixed(0)}%`,
-    tone: "text-success",
-  },
-  { label: "Rental yield", value: `${rental.yieldPct}% · ${fmtINR(rental.monthlyRent)}/mo`, tone: "" },
-];
+import { TileSkeleton } from "@/components/ui-kit/skeletons";
+import { usePrimaryProperty } from "@/hooks/api/use-properties";
+import { fmtINR, fmtINRShort, rental } from "@/lib/property-data";
 
 /** Financial summary grid. */
 export function FinancialSummary() {
+  const { data, isPending, isError, refetch, isFetching } = usePrimaryProperty();
+
+  if (isPending) {
+    return <TileSkeleton className="h-28" />;
+  }
+
+  if (isError || !data) {
+    return (
+      <section className="surface-tile px-4 py-5 text-center">
+        <p className="text-sm font-medium">Unable to load financial summary</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </section>
+    );
+  }
+
+  const stats = [
+    { label: "Current value", value: fmtINR(data.currentValue), tone: "" },
+    { label: "Purchase price", value: fmtINR(data.purchasePrice), tone: "" },
+    {
+      label: "Appreciation",
+      value: `${fmtINRShort(data.appreciationAbsolute)} · ${data.appreciationPct.toFixed(0)}%`,
+      tone: "text-success",
+    },
+    {
+      label: "Rental yield",
+      value: `${rental.yieldPct}% · ${fmtINR(rental.monthlyRent)}/mo`,
+      tone: "",
+    },
+  ];
+
   return (
     <section className="surface-tile grid grid-cols-2 divide-x divide-y divide-border/70 overflow-hidden">
       {stats.map((stat) => (

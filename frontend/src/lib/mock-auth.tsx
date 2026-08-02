@@ -3,7 +3,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 /**
  * Mock authentication — frontend only.
  * No backend, no provider: the "session" is a plain object persisted to localStorage.
- * Swap this module out when a real auth layer is introduced.
+ *
+ * API JWT tokens live separately in `services/auth/token-storage`
+ * (`wealthos.access_token` / `wealthos.refresh_token`) and are unused while
+ * `VITE_API_MODE=mock`. Swap this module for real auth when wiring login pages.
  */
 
 export type MockUser = {

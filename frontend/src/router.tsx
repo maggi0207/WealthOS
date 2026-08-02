@@ -3,9 +3,10 @@ import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { DefaultErrorComponent } from "./components/ui-kit/default-error-component";
 import { NotFoundPage } from "./components/ui-kit/not-found-page";
+import { createQueryClientOptions } from "@/services/http/query-defaults";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient(createQueryClientOptions());
 
   const router = createRouter({
     routeTree,

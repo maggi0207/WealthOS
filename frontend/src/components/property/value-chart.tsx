@@ -2,10 +2,35 @@ import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAx
 
 import { ChartFrame } from "@/components/dashboard/chart-frame";
 import { ChartTooltip } from "@/components/dashboard/chart-tooltip";
-import { valueSeries } from "@/lib/property-data";
+import { ChartSkeleton } from "@/components/ui-kit/skeletons";
+import { usePrimaryProperty } from "@/hooks/api/use-properties";
 
 /** Purchase price vs market value over time (₹ lakh). */
 export function PropertyValueChart() {
+  const { data, isPending, isError, refetch, isFetching } = usePrimaryProperty();
+
+  if (isPending) {
+    return <ChartSkeleton height={220} />;
+  }
+
+  if (isError || !data) {
+    return (
+      <section className="surface-tile px-4 py-5 text-center">
+        <p className="text-sm font-medium">Unable to load value chart</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </section>
+    );
+  }
+
+  const valueSeries = data.valueSeries;
+
   return (
     <section className="surface-tile p-3 pr-4 sm:p-4">
       <div className="mb-1 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] font-medium">
