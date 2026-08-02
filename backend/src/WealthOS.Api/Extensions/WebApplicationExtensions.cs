@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using WealthOS.Api.Middleware;
 using WealthOS.Infrastructure.Identity;
+using WealthOS.Infrastructure.Loans;
 using WealthOS.Infrastructure.Persistence;
+using WealthOS.Infrastructure.Properties;
 using HealthChecks.UI.Client;
 
 namespace WealthOS.Api.Extensions;
@@ -51,5 +53,7 @@ public static class WebApplicationExtensions
 
         await dbContext.Database.MigrateAsync();
         await IdentityDataSeeder.SeedAsync(app.Services);
+        await PropertyDataSeeder.SeedAsync(app.Services);
+        await LoanDataSeeder.SeedAsync(app.Services);
     }
 }

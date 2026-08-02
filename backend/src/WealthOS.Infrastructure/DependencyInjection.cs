@@ -8,12 +8,16 @@ using WealthOS.Application.Common.Interfaces;
 using WealthOS.Domain.Authentication.Entities;
 using WealthOS.Domain.Authentication.Repositories;
 using WealthOS.Domain.Common.Abstractions.Repositories;
+using WealthOS.Domain.Loans.Repositories;
+using WealthOS.Domain.Properties.Repositories;
 using WealthOS.Infrastructure.Authentication.Services;
 using WealthOS.Infrastructure.Dashboard;
 using WealthOS.Infrastructure.Identity;
+using WealthOS.Infrastructure.Loans.Repositories;
 using WealthOS.Infrastructure.Persistence;
 using WealthOS.Infrastructure.Persistence.Interceptors;
 using WealthOS.Infrastructure.Persistence.Repositories;
+using WealthOS.Infrastructure.Properties.Repositories;
 
 namespace WealthOS.Infrastructure;
 
@@ -64,6 +68,9 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IPropertyRepository, PropertyRepository>();
+        services.AddScoped<ILoanRepository, LoanRepository>();
+        services.AddScoped<ILoanProviderRepository, LoanProviderRepository>();
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();

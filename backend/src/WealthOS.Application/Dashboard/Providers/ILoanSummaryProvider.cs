@@ -1,7 +1,7 @@
 namespace WealthOS.Application.Dashboard.Providers;
 
 /// <summary>
-/// Cross-module loan totals. Implemented by Loans module later; mock in Phase 3.
+/// Cross-module loan totals. Implemented by the Loans module.
 /// </summary>
 public interface ILoanSummaryProvider
 {

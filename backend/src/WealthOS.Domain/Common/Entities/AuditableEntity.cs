@@ -4,6 +4,15 @@ namespace WealthOS.Domain.Common.Entities;
 
 public abstract class AuditableEntity : BaseEntity, IAuditableEntity, ISoftDeletable
 {
+    protected AuditableEntity()
+    {
+    }
+
+    protected AuditableEntity(Guid id)
+        : base(id)
+    {
+    }
+
     public DateTime CreatedAt { get; set; }
 
     public Guid? CreatedBy { get; set; }
