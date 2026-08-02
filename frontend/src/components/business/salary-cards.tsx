@@ -1,10 +1,34 @@
 import { BadgeIndianRupee, CalendarClock } from "lucide-react";
 
-import { fmtDate, fmtINR, salaryMembers } from "@/lib/business-data";
 import { EmptyState } from "@/components/ui-kit/empty-state";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useIncomeOverview } from "@/hooks/api/use-income";
+import { fmtDate, fmtINR } from "@/lib/business-data";
 
 /** Salary card — supports multiple salaried household members. */
 export function SalaryCards() {
+  const { data, isPending, isError, refetch, isFetching } = useIncomeOverview();
+
+  if (isPending) return <ListSkeleton rows={2} />;
+
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load salaries</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const salaryMembers = data.salaries;
+
   if (salaryMembers.length === 0) {
     return (
       <EmptyState

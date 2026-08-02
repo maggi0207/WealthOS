@@ -1,4 +1,6 @@
-import { clientName, developers, fmtDateShort, fmtINR, payrollStatusLabel, type PayrollStatus } from "@/lib/business-data";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useIncomeOverview } from "@/hooks/api/use-income";
+import { fmtDateShort, fmtINR, payrollStatusLabel, type PayrollStatus } from "@/lib/business-data";
 import { cn } from "@/lib/utils";
 
 const statusStyle: Record<PayrollStatus, string> = {
@@ -9,7 +11,29 @@ const statusStyle: Record<PayrollStatus, string> = {
 
 /** Developer payroll — assigned client, salary, payment status and next payment. */
 export function DeveloperPayroll() {
+  const { data, isPending, isError, refetch, isFetching } = useIncomeOverview();
+
+  if (isPending) return <ListSkeleton rows={4} />;
+
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load payroll</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const developers = data.developers;
   const monthly = developers.reduce((sum, d) => sum + d.monthlySalary, 0);
+  const clientLookup = new Map(data.clients.map((c) => [c.id, c.name]));
 
   return (
     <section className="surface-tile overflow-hidden">
@@ -19,7 +43,7 @@ export function DeveloperPayroll() {
             <div className="min-w-0">
               <p className="truncate text-[14px] font-semibold">{dev.name}</p>
               <p className="truncate text-[11px] text-muted-foreground">
-                {dev.role} · {clientName(dev.clientId)}
+                {dev.role} · {clientLookup.get(dev.clientId) ?? "Unassigned"}
               </p>
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
                 <span

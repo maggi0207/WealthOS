@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
 import { Briefcase, PauseCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/ui-kit/empty-state";
 import { ListSkeleton } from "@/components/ui-kit/skeletons";
-import { clients, fmtDate, fmtINR, fmtINRShort, type ClientStatus } from "@/lib/business-data";
+import { useIncomeOverview } from "@/hooks/api/use-income";
+import { fmtDate, fmtINR, fmtINRShort, type ClientStatus } from "@/lib/business-data";
 import { cn } from "@/lib/utils";
 
 const statusStyle: Record<ClientStatus, string> = {
@@ -14,14 +14,27 @@ const statusStyle: Record<ClientStatus, string> = {
 
 /** Client cards — revenue, status, outstanding invoice and last payment. */
 export function ClientCards() {
-  const [loading, setLoading] = useState(true);
+  const { data, isPending, isError, refetch, isFetching } = useIncomeOverview();
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 450);
-    return () => clearTimeout(t);
-  }, []);
+  if (isPending) return <ListSkeleton rows={3} />;
 
-  if (loading) return <ListSkeleton rows={3} />;
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load clients</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const clients = data.clients;
 
   if (clients.length === 0) {
     return (
@@ -85,7 +98,8 @@ export function ClientCards() {
             <div className="min-w-0">
               <dt className="text-muted-foreground">Last payment</dt>
               <dd className="mt-0.5 truncate font-medium tabular-nums">
-                {fmtINRShort(client.lastPaymentAmount)} · {fmtDate(client.lastPaymentOn)}
+                {fmtINRShort(client.lastPaymentAmount)}
+                {client.lastPaymentOn ? ` · ${fmtDate(client.lastPaymentOn)}` : ""}
               </dd>
             </div>
           </dl>

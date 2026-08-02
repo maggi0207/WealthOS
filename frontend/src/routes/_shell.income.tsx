@@ -11,7 +11,8 @@ import { PnlSummary } from "@/components/business/pnl-summary";
 import { SalaryCards } from "@/components/business/salary-cards";
 import { DefaultErrorComponent } from "@/components/ui-kit/default-error-component";
 import { SectionHeader } from "@/components/ui-kit/section-header";
-import { cashFlow, fmtINR, totalOutstanding } from "@/lib/business-data";
+import { useIncomeOverview } from "@/hooks/api/use-income";
+import { fmtINR } from "@/lib/business-data";
 
 const description =
   "Track salary, client revenue, developer payroll, business expenses and monthly profit in one mobile-first view.";
@@ -32,6 +33,10 @@ export const Route = createFileRoute("/_shell/income")({
 });
 
 function IncomeBusinessPage() {
+  const { data } = useIncomeOverview();
+  const periodLabel = data?.cashFlow.periodLabel ?? "";
+  const outstanding = data?.totalOutstanding ?? 0;
+
   return (
     <div className="space-y-6">
       <h1 className="sr-only">Income & Business</h1>
@@ -44,14 +49,14 @@ function IncomeBusinessPage() {
       </section>
 
       <section>
-        <SectionHeader title="Salary" action={<span>{cashFlow.periodLabel}</span>} />
+        <SectionHeader title="Salary" action={periodLabel ? <span>{periodLabel}</span> : undefined} />
         <SalaryCards />
       </section>
 
       <section>
         <SectionHeader
           title="Clients"
-          action={<span className="tabular-nums">{fmtINR(totalOutstanding)} due</span>}
+          action={<span className="tabular-nums">{fmtINR(outstanding)} due</span>}
         />
         <ClientCards />
       </section>
@@ -67,7 +72,7 @@ function IncomeBusinessPage() {
       </section>
 
       <section>
-        <SectionHeader title="Profit & loss" action={<span>{cashFlow.periodLabel}</span>} />
+        <SectionHeader title="Profit & loss" action={periodLabel ? <span>{periodLabel}</span> : undefined} />
         <PnlSummary />
       </section>
 

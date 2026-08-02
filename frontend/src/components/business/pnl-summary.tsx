@@ -1,9 +1,36 @@
-import { businessProfit, cashFlow, fmtINR } from "@/lib/business-data";
+import { HeroSkeleton } from "@/components/ui-kit/skeletons";
+import { useIncomeOverview } from "@/hooks/api/use-income";
+import { fmtINR } from "@/lib/business-data";
 import { cn } from "@/lib/utils";
 
 /** Monthly P&L: revenue − payroll − expenses = net profit. */
 export function PnlSummary() {
-  const margin = (businessProfit / cashFlow.businessRevenue) * 100;
+  const { data, isPending, isError, refetch, isFetching } = useIncomeOverview();
+
+  if (isPending) return <HeroSkeleton className="min-h-[12rem]" />;
+
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load P&amp;L</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const { cashFlow } = data;
+  const businessProfit = cashFlow.businessProfit;
+  const margin =
+    cashFlow.businessRevenue > 0
+      ? (businessProfit / cashFlow.businessRevenue) * 100
+      : 0;
 
   const rows = [
     { label: "Revenue", value: cashFlow.businessRevenue, sign: "+" as const },

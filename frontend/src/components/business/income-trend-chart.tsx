@@ -2,10 +2,31 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 
 import { ChartFrame } from "@/components/dashboard/chart-frame";
 import { ChartTooltip } from "@/components/dashboard/chart-tooltip";
-import { incomeTrend } from "@/lib/business-data";
+import { TileSkeleton } from "@/components/ui-kit/skeletons";
+import { useIncomeOverview } from "@/hooks/api/use-income";
 
 /** Income trend by month — salary vs business revenue, in ₹ thousand. */
 export function IncomeTrendChart() {
+  const { data, isPending, isError, refetch, isFetching } = useIncomeOverview();
+
+  if (isPending) return <TileSkeleton className="h-[16rem]" />;
+
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load income trend</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="surface-tile p-4">
       <p className="text-[13px] font-semibold">Income by month</p>
@@ -14,7 +35,7 @@ export function IncomeTrendChart() {
       <div className="mt-3">
         <ChartFrame height={230} mobileHeight={190}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={incomeTrend} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
+            <BarChart data={data.trend} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
               <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
