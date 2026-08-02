@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import { ChartFrame } from "@/components/dashboard/chart-frame";
-import { fmtINRShort, investmentAllocation, investmentAllocationTotal } from "@/lib/investments-data";
+import { TileSkeleton } from "@/components/ui-kit/skeletons";
+import { useInvestmentsOverview } from "@/hooks/api/use-investments";
+import { fmtINRShort } from "@/lib/investments-data";
 import { cn } from "@/lib/utils";
 
 /** Animated allocation donut with a tappable legend. */
 export function InvestmentAllocationDonut() {
+  const { data, isPending, isError, refetch, isFetching } = useInvestmentsOverview();
   const [active, setActive] = useState<number | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -15,7 +18,26 @@ export function InvestmentAllocationDonut() {
     return () => window.clearTimeout(id);
   }, []);
 
-  const focus = active === null ? null : investmentAllocation[active];
+  if (isPending) return <TileSkeleton className="h-[18rem]" />;
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load allocation</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const allocation = data.allocation;
+  const total = data.allocationTotal || 1;
+  const focus = active === null ? null : allocation[active];
 
   return (
     <section className="surface-tile p-4">
@@ -24,7 +46,7 @@ export function InvestmentAllocationDonut() {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={investmentAllocation}
+                data={allocation}
                 dataKey="value"
                 nameKey="name"
                 innerRadius="66%"
@@ -36,7 +58,7 @@ export function InvestmentAllocationDonut() {
                 animationEasing="ease-out"
                 onClick={(_, index) => setActive((prev) => (prev === index ? null : index))}
               >
-                {investmentAllocation.map((slice, index) => (
+                {allocation.map((slice, index) => (
                   <Cell
                     key={slice.name}
                     fill={slice.color}
@@ -55,15 +77,15 @@ export function InvestmentAllocationDonut() {
               {focus ? focus.name : "Portfolio"}
             </p>
             <p className="mt-0.5 font-display text-xl font-semibold tabular-nums sm:text-2xl">
-              {fmtINRShort(focus ? focus.value : investmentAllocationTotal)}
+              {fmtINRShort(focus ? focus.value : data.allocationTotal)}
             </p>
           </div>
         </div>
       </div>
 
       <ul className="mt-3 grid gap-1.5">
-        {investmentAllocation.map((slice, index) => {
-          const pct = (slice.value / investmentAllocationTotal) * 100;
+        {allocation.map((slice, index) => {
+          const pct = (slice.value / total) * 100;
           return (
             <li key={slice.name}>
               <button

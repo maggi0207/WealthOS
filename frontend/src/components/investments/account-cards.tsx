@@ -1,7 +1,9 @@
 import { CircleDashed, Clock3, Plus, RefreshCw, ShieldCheck, PencilLine } from "lucide-react";
 import { toast } from "sonner";
 
-import { accounts, fmtINRShort, statusLabel, type AccountStatus } from "@/lib/investments-data";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useInvestmentsOverview } from "@/hooks/api/use-investments";
+import { fmtINRShort, statusLabel, type AccountStatus } from "@/lib/investments-data";
 import { cn } from "@/lib/utils";
 
 const statusStyle: Record<AccountStatus, string> = {
@@ -18,9 +20,28 @@ const statusIcon = {
 
 /** Investment accounts — snap-scrolling on phones, grid from sm up. */
 export function AccountCards() {
+  const { data, isPending, isError, refetch, isFetching } = useInvestmentsOverview();
+
+  if (isPending) return <ListSkeleton rows={3} />;
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load accounts</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="no-scrollbar bleed-gutter page-gutter flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-3">
-      {accounts.map((account) => {
+      {data.accounts.map((account) => {
         const Icon = statusIcon[account.status];
         const up = account.dayChangePct >= 0;
         return (

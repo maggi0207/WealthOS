@@ -1,43 +1,55 @@
 import { Search, SearchX } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/ui-kit/empty-state";
 import { ListSkeleton } from "@/components/ui-kit/skeletons";
 import { Input } from "@/components/ui/input";
+import { useInvestmentsOverview } from "@/hooks/api/use-investments";
 import {
-  accounts,
   fmtINR,
   fmtINRShort,
   holdingCategories,
-  holdings,
   type HoldingCategory,
 } from "@/lib/investments-data";
 import { cn } from "@/lib/utils";
 
-const accountName = (id: string) => {
-  const a = accounts.find((x) => x.id === id);
-  return a ? `${a.name} · ${a.owner}` : "Manual";
-};
-
 /** Searchable, filterable holdings list — card rows on mobile, table-like on desktop. */
 export function HoldingsList() {
+  const { data, isPending, isError, refetch, isFetching } = useInvestmentsOverview();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<HoldingCategory>("All");
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const id = window.setTimeout(() => setLoading(false), 520);
-    return () => window.clearTimeout(id);
-  }, []);
+  const accountName = (id: string) => {
+    const a = data?.accounts.find((x) => x.id === id);
+    return a ? `${a.name} · ${a.owner}` : "Manual";
+  };
 
   const rows = useMemo(() => {
+    const holdings = data?.holdings ?? [];
     const q = query.trim().toLowerCase();
     return holdings.filter(
       (h) =>
         (category === "All" || h.category === category) &&
         (q === "" || h.name.toLowerCase().includes(q) || h.ticker.toLowerCase().includes(q)),
     );
-  }, [query, category]);
+  }, [query, category, data?.holdings]);
+
+  if (isPending) return <ListSkeleton rows={5} />;
+  if (isError) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load holdings</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className="space-y-3">
@@ -71,9 +83,7 @@ export function HoldingsList() {
         ))}
       </div>
 
-      {loading ? (
-        <ListSkeleton rows={5} />
-      ) : rows.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState
           icon={SearchX}
           title="No holdings match"

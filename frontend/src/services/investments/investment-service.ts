@@ -1,0 +1,232 @@
+import { isMockApiMode } from "@/config/env";
+import {
+  accounts as mockAccounts,
+  holdings as mockHoldings,
+  investmentAllocation as mockAllocation,
+  investmentAllocationTotal as mockAllocationTotal,
+  portfolioReturn as mockReturn,
+  portfolioReturnPct as mockReturnPct,
+  portfolioSummary as mockSummary,
+  transactions as mockTxns,
+  type AccountStatus,
+  type Holding,
+  type InvestmentAccount,
+  type InvestmentSlice,
+  type InvestmentTxn,
+} from "@/lib/investments-data";
+import { BaseApiService } from "@/services/http/base-api-service";
+
+export type PortfolioView = {
+  invested: number;
+  current: number;
+  todayChange: number;
+  todayChangePct: number;
+  xirr: number;
+  overallReturn: number;
+  overallReturnPct: number;
+};
+
+export type InvestmentsOverview = {
+  portfolio: PortfolioView;
+  accounts: InvestmentAccount[];
+  holdings: Holding[];
+  transactions: InvestmentTxn[];
+  allocation: InvestmentSlice[];
+  allocationTotal: number;
+};
+
+type PortfolioDto = {
+  investedAmount: number;
+  currentValue: number;
+  todaysGain: number;
+  todaysGainPercent: number;
+  overallGain: number;
+  absoluteReturnPercent: number;
+  xirrPercent?: number | null;
+};
+
+type AccountDto = {
+  id: string;
+  name: string;
+  ownerName?: string | null;
+  providerName?: string | null;
+  kindLabel?: string | null;
+  status: number | string;
+  lastSyncedAt?: string | null;
+  currentValue: number;
+  dayChangePercent?: number;
+  holdingCount?: number;
+};
+
+type AccountListDto = { items: AccountDto[] };
+
+type HoldingDto = {
+  id: string;
+  accountId: string;
+  name: string;
+  symbol?: string | null;
+  category: number | string;
+  categoryName?: string | null;
+  currentValue: number;
+  investedAmount: number;
+  dayChange?: number;
+  dayChangePercent?: number;
+};
+
+type HoldingListDto = { items: HoldingDto[] };
+
+type TxnDto = {
+  id: string;
+  type: number | string;
+  title?: string | null;
+  description?: string | null;
+  amount: number;
+  tradeDate: string;
+  accountName?: string | null;
+};
+
+type TxnListDto = { items: TxnDto[] };
+
+type AllocationDto = {
+  totalValue: number;
+  slices: Array<{ categoryName: string; value: number; weightPercent: number }>;
+};
+
+const COLORS = [
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+];
+
+function n(v: unknown, f = 0) {
+  const x = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(x) ? x : f;
+}
+
+function mapStatus(s: number | string): AccountStatus {
+  const k = String(s);
+  if (k === "1" || k === "Manual") return "manual";
+  if (k === "2" || k === "Disconnected" || k === "3") return "soon";
+  return "connected";
+}
+
+function mapHoldingCategory(c: number | string, name?: string | null): Holding["category"] {
+  const raw = (name || String(c)).toLowerCase();
+  if (raw.includes("mutual") || raw === "1") return "Mutual Funds";
+  if (raw.includes("bond") || raw === "2") return "Corporate Bonds";
+  if (raw.includes("gold") || raw === "3") return "Gold ETFs";
+  if (raw.includes("cash") || raw.includes("fd") || raw === "4") return "Cash";
+  return "Stocks";
+}
+
+function mapTxnKind(t: number | string): InvestmentTxn["kind"] {
+  const k = String(t).toLowerCase();
+  if (k.includes("sell") || k === "1") return "sell";
+  if (k.includes("dividend") || k === "2") return "dividend";
+  if (k.includes("sip") || k === "3") return "sip";
+  if (k.includes("interest") || k === "4") return "interest";
+  return "buy";
+}
+
+function relativeSync(iso?: string | null): string {
+  if (!iso) return "Not synced";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Not synced";
+  const mins = Math.round((Date.now() - d.getTime()) / 60_000);
+  if (mins < 60) return `Synced ${Math.max(mins, 1)} min ago`;
+  if (mins < 1440) return `Synced ${Math.round(mins / 60)} hr ago`;
+  return `Synced ${Math.round(mins / 1440)} days ago`;
+}
+
+function formatTxnDate(iso: string): string {
+  const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function mapMock(): InvestmentsOverview {
+  return {
+    portfolio: {
+      invested: mockSummary.invested,
+      current: mockSummary.current,
+      todayChange: mockSummary.todayChange,
+      todayChangePct: mockSummary.todayChangePct,
+      xirr: mockSummary.xirr,
+      overallReturn: mockReturn,
+      overallReturnPct: mockReturnPct,
+    },
+    accounts: mockAccounts.map((a) => ({ ...a })),
+    holdings: mockHoldings.map((h) => ({ ...h })),
+    transactions: mockTxns.map((t) => ({ ...t })),
+    allocation: mockAllocation.map((s) => ({ ...s })),
+    allocationTotal: mockAllocationTotal,
+  };
+}
+
+class InvestmentService extends BaseApiService {
+  protected readonly serviceName = "InvestmentService";
+
+  async getOverview(): Promise<InvestmentsOverview> {
+    if (isMockApiMode()) return mapMock();
+
+    const [portfolio, accounts, holdings, txns, allocation] = await Promise.all([
+      this.get<PortfolioDto>("/investments/portfolio"),
+      this.get<AccountListDto>("/investments/accounts?pageSize=50"),
+      this.get<HoldingListDto>("/investments/holdings?pageSize=100"),
+      this.get<TxnListDto>("/investments/transactions?pageSize=50"),
+      this.get<AllocationDto>("/investments/allocation"),
+    ]);
+
+    return {
+      portfolio: {
+        invested: n(portfolio.investedAmount),
+        current: n(portfolio.currentValue),
+        todayChange: n(portfolio.todaysGain),
+        todayChangePct: n(portfolio.todaysGainPercent),
+        xirr: n(portfolio.xirrPercent, 0),
+        overallReturn: n(portfolio.overallGain),
+        overallReturnPct: n(portfolio.absoluteReturnPercent),
+      },
+      accounts: (accounts.items ?? []).map((a) => ({
+        id: String(a.id),
+        name: a.name,
+        owner: a.ownerName || "—",
+        kind: a.kindLabel || a.providerName || "Investment",
+        status: mapStatus(a.status),
+        lastSync: relativeSync(a.lastSyncedAt),
+        value: n(a.currentValue),
+        dayChangePct: n(a.dayChangePercent),
+        holdings: n(a.holdingCount),
+      })),
+      holdings: (holdings.items ?? []).map((h) => ({
+        id: String(h.id),
+        name: h.name,
+        ticker: h.symbol || "",
+        category: mapHoldingCategory(h.category, h.categoryName),
+        accountId: String(h.accountId),
+        value: n(h.currentValue),
+        invested: n(h.investedAmount),
+        dayChange: n(h.dayChange),
+        dayChangePct: n(h.dayChangePercent),
+      })),
+      transactions: (txns.items ?? []).map((t) => ({
+        id: String(t.id),
+        kind: mapTxnKind(t.type),
+        title: t.title || t.description || "Transaction",
+        account: t.accountName || "—",
+        date: formatTxnDate(t.tradeDate),
+        amount: n(t.amount),
+      })),
+      allocation: (allocation.slices ?? []).map((s, i) => ({
+        name: s.categoryName,
+        value: n(s.value),
+        color: COLORS[i % COLORS.length]!,
+      })),
+      allocationTotal: n(allocation.totalValue),
+    };
+  }
+}
+
+export const investmentService = new InvestmentService();

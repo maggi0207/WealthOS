@@ -1,6 +1,8 @@
 import { ArrowDownLeft, ArrowUpRight, Coins, Percent, Repeat, type LucideIcon } from "lucide-react";
 
-import { fmtINR, transactions, type InvestmentTxn } from "@/lib/investments-data";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useInvestmentsOverview } from "@/hooks/api/use-investments";
+import { fmtINR, type InvestmentTxn } from "@/lib/investments-data";
 import { cn } from "@/lib/utils";
 
 const icons: Record<InvestmentTxn["kind"], LucideIcon> = {
@@ -13,10 +15,29 @@ const icons: Record<InvestmentTxn["kind"], LucideIcon> = {
 
 /** Transaction history as a vertical timeline. */
 export function TransactionTimeline() {
+  const { data, isPending, isError, refetch, isFetching } = useInvestmentsOverview();
+
+  if (isPending) return <ListSkeleton rows={5} />;
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load transactions</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="surface-tile p-4">
       <ol className="relative space-y-4 before:absolute before:bottom-3 before:left-[15px] before:top-3 before:w-px before:bg-border">
-        {transactions.map((txn) => {
+        {data.transactions.map((txn) => {
           const Icon = icons[txn.kind];
           const credit = txn.amount >= 0;
           return (

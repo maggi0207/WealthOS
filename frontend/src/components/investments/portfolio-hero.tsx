@@ -1,20 +1,35 @@
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
+import { HeroSkeleton } from "@/components/ui-kit/skeletons";
+import { useInvestmentsOverview } from "@/hooks/api/use-investments";
 import { useCountUp } from "@/hooks/use-count-up";
-import {
-  fmtINR,
-  fmtINRShort,
-  fmtPctSigned,
-  portfolioReturn,
-  portfolioReturnPct,
-  portfolioSummary,
-} from "@/lib/investments-data";
+import { fmtINR, fmtINRShort, fmtPctSigned } from "@/lib/investments-data";
 import { cn } from "@/lib/utils";
 
 /** Portfolio summary hero — invested, current value, day move, return and XIRR. */
 export function PortfolioHero() {
-  const animated = useCountUp(portfolioSummary.current, 1100);
-  const up = portfolioSummary.todayChange >= 0;
+  const { data, isPending, isError, refetch, isFetching } = useInvestmentsOverview();
+  const p = data?.portfolio;
+  const animated = useCountUp(p?.current ?? 0, 1100);
+  const up = (p?.todayChange ?? 0) >= 0;
+
+  if (isPending) return <HeroSkeleton className="min-h-[14rem]" />;
+
+  if (isError || !p) {
+    return (
+      <section className="surface-hero overflow-hidden p-4 sm:p-5">
+        <p className="text-sm font-medium">Unable to load portfolio</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section className="surface-hero overflow-hidden">
@@ -33,22 +48,22 @@ export function PortfolioHero() {
             )}
           >
             {up ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
-            {fmtINR(Math.abs(portfolioSummary.todayChange))} ({Math.abs(portfolioSummary.todayChangePct)}%)
+            {fmtINR(Math.abs(p.todayChange))} ({Math.abs(p.todayChangePct)}%)
           </span>
           <span className="text-muted-foreground">today</span>
         </p>
       </div>
 
       <dl className="mt-4 grid grid-cols-2 divide-x divide-y divide-border/70 border-t border-border/70">
-        <Cell label="Total invested" value={fmtINRShort(portfolioSummary.invested)} />
+        <Cell label="Total invested" value={fmtINRShort(p.invested)} />
         <Cell
           label="Overall return"
-          value={fmtINRShort(portfolioReturn)}
-          sub={fmtPctSigned(portfolioReturnPct)}
+          value={fmtINRShort(p.overallReturn)}
+          sub={fmtPctSigned(p.overallReturnPct)}
           tone="positive"
         />
-        <Cell label="XIRR" value={`${portfolioSummary.xirr}%`} sub="Placeholder" />
-        <Cell label="Accounts" value="4" sub="2 connected (mock)" />
+        <Cell label="XIRR" value={`${p.xirr}%`} sub="Placeholder" />
+        <Cell label="Accounts" value={String(data.accounts.length)} sub="connected + manual" />
       </dl>
     </section>
   );
@@ -67,13 +82,18 @@ function Cell({
 }) {
   return (
     <div className="px-4 py-3 sm:px-5">
-      <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</dt>
-      <dd className="mt-1 truncate font-display text-lg font-semibold tabular-nums">{value}</dd>
-      {sub && (
-        <p className={cn("text-[11px] font-medium tabular-nums", tone === "positive" ? "text-success" : "text-muted-foreground")}>
-          {sub}
-        </p>
-      )}
+      <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </dt>
+      <dd
+        className={cn(
+          "mt-1 font-display text-[1.05rem] font-semibold tabular-nums sm:text-lg",
+          tone === "positive" && "text-success",
+        )}
+      >
+        {value}
+      </dd>
+      {sub ? <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p> : null}
     </div>
   );
 }
