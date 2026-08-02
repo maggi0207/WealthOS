@@ -1,0 +1,510 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * WealthOS design system.
+ * Dark-first financial cockpit: deep slate-teal surfaces, emerald capital accent,
+ * amber for liabilities/attention. All colors in oklch, all tokens semantic.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --shadow-tile: 0 1px 2px -1px oklch(0 0 0 / 0.18);
+  --shadow-elevate: 0 1px 0 0 var(--hairline), 0 1px 2px -1px oklch(0 0 0 / 0.25), 0 16px 36px -26px oklch(0 0 0 / 0.7);
+  --shadow-glow: 0 0 0 1px var(--hairline), 0 12px 40px -18px var(--glow);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.985 0.004 240);
+  --foreground: oklch(0.19 0.03 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.19 0.03 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.19 0.03 250);
+  --primary: oklch(0.62 0.14 168);
+  --primary-foreground: oklch(0.15 0.03 200);
+  --secondary: oklch(0.95 0.008 240);
+  --secondary-foreground: oklch(0.25 0.03 250);
+  --muted: oklch(0.955 0.006 240);
+  --muted-foreground: oklch(0.52 0.02 250);
+  --accent: oklch(0.94 0.02 190);
+  --accent-foreground: oklch(0.22 0.04 210);
+  --destructive: oklch(0.58 0.2 22);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.64 0.14 160);
+  --success-foreground: oklch(0.15 0.03 200);
+  --warning: oklch(0.76 0.14 75);
+  --warning-foreground: oklch(0.2 0.04 70);
+  --border: oklch(0.9 0.01 245);
+  --input: oklch(0.9 0.01 245);
+  --ring: oklch(0.62 0.14 168);
+  --hairline: oklch(0.85 0.01 245 / 0.6);
+  --glow: oklch(0.62 0.14 168 / 0.35);
+  --chart-1: oklch(0.62 0.14 168);
+  --chart-2: oklch(0.62 0.12 240);
+  --chart-3: oklch(0.76 0.14 75);
+  --chart-4: oklch(0.6 0.16 300);
+  --chart-5: oklch(0.6 0.17 22);
+  --sidebar: oklch(0.97 0.006 240);
+  --sidebar-foreground: oklch(0.25 0.03 250);
+  --sidebar-primary: oklch(0.62 0.14 168);
+  --sidebar-primary-foreground: oklch(0.15 0.03 200);
+  --sidebar-accent: oklch(0.93 0.012 240);
+  --sidebar-accent-foreground: oklch(0.2 0.03 250);
+  --sidebar-border: oklch(0.9 0.01 245);
+  --sidebar-ring: oklch(0.62 0.14 168);
+}
+
+.dark {
+  --background: oklch(0.17 0.022 250);
+  --foreground: oklch(0.95 0.008 240);
+  --card: oklch(0.215 0.024 250);
+  --card-foreground: oklch(0.95 0.008 240);
+  --popover: oklch(0.215 0.024 250);
+  --popover-foreground: oklch(0.95 0.008 240);
+  --primary: oklch(0.76 0.15 168);
+  --primary-foreground: oklch(0.17 0.03 200);
+  --secondary: oklch(0.265 0.026 250);
+  --secondary-foreground: oklch(0.93 0.008 240);
+  --muted: oklch(0.26 0.024 250);
+  --muted-foreground: oklch(0.68 0.02 245);
+  --accent: oklch(0.3 0.035 200);
+  --accent-foreground: oklch(0.93 0.01 200);
+  --destructive: oklch(0.64 0.19 22);
+  --destructive-foreground: oklch(0.98 0 0);
+  --success: oklch(0.76 0.15 165);
+  --success-foreground: oklch(0.17 0.03 200);
+  --warning: oklch(0.82 0.14 80);
+  --warning-foreground: oklch(0.2 0.04 70);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.76 0.15 168);
+  --hairline: oklch(1 0 0 / 0.08);
+  --glow: oklch(0.76 0.15 168 / 0.28);
+  --chart-1: oklch(0.76 0.15 168);
+  --chart-2: oklch(0.68 0.13 240);
+  --chart-3: oklch(0.82 0.14 80);
+  --chart-4: oklch(0.68 0.16 300);
+  --chart-5: oklch(0.68 0.17 22);
+  --sidebar: oklch(0.195 0.024 252);
+  --sidebar-foreground: oklch(0.9 0.01 240);
+  --sidebar-primary: oklch(0.76 0.15 168);
+  --sidebar-primary-foreground: oklch(0.17 0.03 200);
+  --sidebar-accent: oklch(0.27 0.028 250);
+  --sidebar-accent-foreground: oklch(0.96 0.008 240);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.76 0.15 168);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility surface-panel {
+  background-color: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-elevate);
+}
+
+@utility surface-tile {
+  background-color: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-tile);
+}
+
+@utility surface-hero {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-3xl);
+  background-image: linear-gradient(
+    165deg,
+    color-mix(in oklch, var(--card), var(--primary) 6%),
+    var(--card) 60%
+  );
+  box-shadow: var(--shadow-elevate);
+}
+
+@utility press {
+  transition: transform 0.16s ease, opacity 0.16s ease;
+  &:active {
+    transform: scale(0.985);
+    opacity: 0.9;
+  }
+}
+
+@utility text-gradient-brand {
+  background-image: linear-gradient(
+    100deg,
+    var(--primary),
+    color-mix(in oklch, var(--chart-2), var(--primary) 35%)
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+@utility bg-aurora {
+  background-image:
+    radial-gradient(900px 480px at 12% -10%, var(--glow), transparent 65%),
+    radial-gradient(700px 420px at 92% 0%, color-mix(in oklch, var(--chart-2), transparent 72%), transparent 60%);
+}
+
+/* ---------------------------------------------------------------------------
+ * Mobile-first primitives.
+ * Safe-area insets for iOS, thumb-friendly targets and fluid type scaling.
+ * ------------------------------------------------------------------------- */
+
+@layer base {
+  html,
+  body {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  /* Touch targets: never below 44px on coarse pointers. */
+  @media (pointer: coarse) {
+    button,
+    a[role="button"],
+    [role="tab"],
+    summary,
+    input[type="checkbox"],
+    input[type="radio"],
+    select {
+      min-height: 44px;
+    }
+
+    button:where([data-slot="button"][data-size="icon"]) {
+      min-width: 44px;
+    }
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+@utility pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0px);
+}
+
+@utility px-safe {
+  padding-left: max(env(safe-area-inset-left), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+
+/* 8pt page gutter: 16px on phones, 20px on large phones, wider on tablets up. */
+:root {
+  --page-gutter: 16px;
+}
+
+@media (min-width: 400px) {
+  :root {
+    --page-gutter: 20px;
+  }
+}
+
+@media (min-width: 640px) {
+  :root {
+    --page-gutter: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --page-gutter: 32px;
+  }
+}
+
+@utility page-gutter {
+  padding-left: max(var(--page-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--page-gutter), env(safe-area-inset-right));
+}
+
+/* Full-bleed escape hatch that stays aligned with the page gutter. */
+@utility bleed-gutter {
+  margin-left: calc(-1 * max(var(--page-gutter), env(safe-area-inset-left)));
+  margin-right: calc(-1 * max(var(--page-gutter), env(safe-area-inset-right)));
+}
+
+@utility mb-safe {
+  margin-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+/* Fluid display type: readable on a 360px phone, generous on desktop. */
+@utility text-fluid-2xl {
+  font-size: clamp(1.375rem, 1.1rem + 1.4vw, 1.875rem);
+  line-height: 1.15;
+}
+
+@utility text-fluid-xl {
+  font-size: clamp(1.125rem, 1rem + 0.8vw, 1.5rem);
+  line-height: 1.2;
+}
+
+@utility tap-target {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion & focus polish.
+ * Page transitions, message entrances and a single accessible focus ring.
+ * ------------------------------------------------------------------------- */
+
+@keyframes route-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes msg-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@utility route-enter {
+  animation: route-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility msg-enter {
+  animation: msg-enter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Milestone celebration — subtle pop + glow for completed goals. */
+@keyframes celebrate-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes celebrate-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-success) 32%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in oklab, var(--color-success) 0%, transparent);
+  }
+}
+
+@utility celebrate-pop {
+  animation: celebrate-pop 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility celebrate-glow {
+  animation: celebrate-glow 2.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebrate-pop,
+  .celebrate-glow {
+    animation: none;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+ * Branded splash screen (first visit per session).
+ * ------------------------------------------------------------------------- */
+
+@keyframes splash-mark-in {
+  from {
+    opacity: 0;
+    transform: scale(0.86) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes splash-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes splash-bar-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@layer components {
+  .splash-root {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(120% 80% at 50% 0%, oklch(0.26 0.05 190) 0%, var(--background) 62%);
+    opacity: 1;
+    transition: opacity var(--splash-fade, 420ms) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .splash-root[data-state="leaving"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .splash-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+
+  .splash-mark {
+    width: 5rem;
+    height: 5rem;
+    filter: drop-shadow(0 18px 40px var(--glow));
+    animation: splash-mark-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .splash-word {
+    margin-top: 0.75rem;
+    animation: splash-word-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+  }
+
+  .splash-tag {
+    animation: splash-word-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+  }
+
+  .splash-bar {
+    margin-top: 1.25rem;
+    width: 6.5rem;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    transform-origin: left center;
+    animation: splash-bar-fill 900ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+
+@layer base {
+  /* One consistent, visible focus ring across every interactive surface. */
+  :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

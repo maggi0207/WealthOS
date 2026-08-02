@@ -1,13 +1,37 @@
-# backend
+# WealthOS Backend — Phase 1 Foundation
 
-Server-side APIs, domain services, and business logic for WealthOS.
+Clean Architecture backend for the WealthOS platform.
 
-## Purpose
+## Projects
 
-- Host API endpoints and application services
-- Encapsulate domain rules, integrations, and orchestration
-- Remain independent of frontend frameworks and UI concerns
+| Project | Responsibility |
+|---------|----------------|
+| `WealthOS.Api` | HTTP host, middleware, Swagger, health |
+| `WealthOS.Application` | Use cases, DTOs, validation, mapping |
+| `WealthOS.Domain` | Entities, domain rules, repository contracts |
+| `WealthOS.Infrastructure` | EF Core, PostgreSQL, JWT, repositories |
 
-## Notes
+## Local development
 
-This folder is prepared as a placeholder. No solution, framework, or runtime project has been generated yet.
+```bash
+# Start PostgreSQL
+docker compose -f docker/docker-compose.yml up -d
+
+# Apply migrations
+dotnet ef database update --project src/WealthOS.Infrastructure --startup-project src/WealthOS.Api
+
+# Run API
+dotnet run --project src/WealthOS.Api
+```
+
+## Endpoints
+
+- Swagger: `https://localhost:5001/swagger` (Development)
+- Health: `GET /api/v1/health`
+- Probe: `GET /health`
+
+## Module boundaries
+
+Authentication, Dashboard, IncomeBusiness, Investments, Properties, Loans, Goals, Documents, Reports, Notifications, AIAdvisor, Settings, Shared.
+
+Phase 1 establishes shared infrastructure only. Feature modules are implemented in subsequent phases.

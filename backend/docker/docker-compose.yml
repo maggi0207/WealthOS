@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wealthos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wealthos
+      POSTGRES_USER: wealthos
+      POSTGRES_PASSWORD: wealthos_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - wealthos_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wealthos -d wealthos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: wealthos-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=wealthos;Username=wealthos;Password=wealthos_dev_password
+      Jwt__Issuer: https://api.wealthos.local
+      Jwt__Audience: wealthos-api
+      Jwt__SecretKey: DOCKER_DEV_SECRET_KEY_MIN_32_CHARACTERS
+      Jwt__AccessTokenExpirationMinutes: 15
+      Jwt__RefreshTokenExpirationDays: 7
+      Cors__AllowedOrigins__0: http://localhost:5173
+      Cors__AllowedOrigins__1: http://localhost:3000
+    ports:
+      - "8080:8080"
+
+volumes:
+  wealthos_postgres_data:

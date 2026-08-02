@@ -1,13 +1,25 @@
-# database
+# Database
 
-Database artifacts for WealthOS.
+PostgreSQL is the system of record for WealthOS.
 
-## Purpose
+## Schema management
 
-- Schema definitions and migration scripts
-- Seed data, reference data, and maintenance scripts
-- Database-related documentation used by engineering and operations
+- Migrations live in `backend/src/WealthOS.Infrastructure/Persistence/Migrations/`
+- Apply migrations: `dotnet ef database update --project backend/src/WealthOS.Infrastructure --startup-project backend/src/WealthOS.Api`
 
-## Notes
+## Local PostgreSQL
 
-This folder is prepared for future schema and migration work. No database engine or ORM has been selected in this scaffold.
+Start via Docker:
+
+```bash
+docker compose -f backend/docker/docker-compose.yml up -d postgres
+```
+
+Connection string (development): see `backend/src/WealthOS.Api/appsettings.Development.json`
+
+## Phase 1 tables
+
+- `Users` — identity foundation
+- `RefreshTokens` — refresh token rotation support
+
+Feature tables are added in subsequent phases.

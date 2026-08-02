@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/WealthOS.Api/WealthOS.Api.csproj" />
+    <Project Path="src/WealthOS.Application/WealthOS.Application.csproj" />
+    <Project Path="src/WealthOS.Domain/WealthOS.Domain.csproj" />
+    <Project Path="src/WealthOS.Infrastructure/WealthOS.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/WealthOS.IntegrationTests/WealthOS.IntegrationTests.csproj" />
+    <Project Path="tests/WealthOS.UnitTests/WealthOS.UnitTests.csproj" />
+  </Folder>
+</Solution>
