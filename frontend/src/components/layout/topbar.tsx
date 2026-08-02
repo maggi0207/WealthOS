@@ -13,10 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNotifications } from "@/hooks/api/use-notifications";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/lib/mock-auth";
 import { findNavItem } from "@/lib/navigation";
-import { notifications } from "@/lib/mock-data";
 
 export function Topbar() {
   const { theme, toggle } = useTheme();
@@ -24,6 +24,9 @@ export function Topbar() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const current = findNavItem(pathname);
+  const { data: notifications } = useNotifications();
+  const items = notifications?.items ?? [];
+  const unread = notifications?.unreadCount ?? 0;
 
   return (
     <header className="sticky top-0 z-30 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border/70 bg-background/80 py-2 pt-safe page-gutter backdrop-blur-xl sm:flex sm:justify-between sm:py-3">
@@ -54,21 +57,29 @@ export function Topbar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" aria-label="Notifications" className="relative size-11 md:size-9">
               <Bell className="size-4" />
-              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary" />
+              {unread > 0 ? (
+                <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary" />
+              ) : null}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-72">
             <DropdownMenuLabel className="flex items-center justify-between">
               Notifications
-              <Badge variant="secondary">{notifications.length}</Badge>
+              <Badge variant="secondary">{unread || items.length}</Badge>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {notifications.map((n) => (
-              <DropdownMenuItem key={n.id} className="flex-col items-start gap-0.5">
-                <span className="text-sm">{n.title}</span>
-                <span className="text-xs text-muted-foreground">{n.meta}</span>
+            {items.length === 0 ? (
+              <DropdownMenuItem disabled className="text-muted-foreground">
+                No notifications
               </DropdownMenuItem>
-            ))}
+            ) : (
+              items.map((n) => (
+                <DropdownMenuItem key={n.id} className="flex-col items-start gap-0.5">
+                  <span className="text-sm">{n.title}</span>
+                  <span className="text-xs text-muted-foreground">{n.meta}</span>
+                </DropdownMenuItem>
+              ))
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
