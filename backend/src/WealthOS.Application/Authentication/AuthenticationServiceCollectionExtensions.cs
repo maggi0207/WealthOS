@@ -18,10 +18,15 @@ public static class AuthenticationServiceCollectionExtensions
                     !string.IsNullOrWhiteSpace(settings.Issuer)
                     && !string.IsNullOrWhiteSpace(settings.Audience)
                     && !string.IsNullOrWhiteSpace(settings.SecretKey)
+                    && settings.SecretKey.Length >= 32
                     && settings.AccessTokenExpirationMinutes > 0
                     && settings.RefreshTokenExpirationDays > 0,
                 "JWT settings are invalid or incomplete.")
             .ValidateOnStart();
+
+        services
+            .AddOptions<AdminSeedSettings>()
+            .Bind(configuration.GetSection(AdminSeedSettings.SectionName));
 
         return services;
     }

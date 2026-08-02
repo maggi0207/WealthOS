@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using WealthOS.Api.Middleware;
+using WealthOS.Infrastructure.Identity;
+using WealthOS.Infrastructure.Persistence;
 using HealthChecks.UI.Client;
 
 namespace WealthOS.Api.Extensions;
@@ -36,8 +39,17 @@ public static class WebApplicationExtensions
         app.MapHealthChecks("/health", new HealthCheckOptions
         {
             ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
-        });
+        }).AllowAnonymous();
 
         return app;
+    }
+
+    public static async Task InitializeDatabaseAsync(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        await dbContext.Database.MigrateAsync();
+        await IdentityDataSeeder.SeedAsync(app.Services);
     }
 }

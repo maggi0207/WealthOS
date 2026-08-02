@@ -21,13 +21,15 @@ public sealed class JwtTokenService : IJwtTokenService
 
     public string GenerateAccessToken(User user, IEnumerable<string> roles)
     {
+        var email = user.Email ?? string.Empty;
+
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email),
+            new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, user.Email),
+            new(ClaimTypes.Email, email),
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));

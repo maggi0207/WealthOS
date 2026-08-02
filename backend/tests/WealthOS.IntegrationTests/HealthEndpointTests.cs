@@ -31,6 +31,8 @@ public sealed class HealthEndpointTests : IAsyncLifetime
                 builder.UseSetting("Jwt:SecretKey", "INTEGRATION_TEST_SECRET_KEY_32_CHARS");
                 builder.UseSetting("Jwt:AccessTokenExpirationMinutes", "15");
                 builder.UseSetting("Jwt:RefreshTokenExpirationDays", "7");
+                builder.UseSetting("AdminSeed:Email", "admin@wealthos.local");
+                builder.UseSetting("AdminSeed:Password", "Admin@WealthOS1!");
             });
 
         _client = _factory.CreateClient(new WebApplicationFactoryClientOptions

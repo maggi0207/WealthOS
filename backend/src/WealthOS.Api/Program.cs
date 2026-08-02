@@ -21,6 +21,7 @@ try
     builder.Services.AddApiServices(builder.Configuration);
 
     var app = builder.Build();
+    await app.InitializeDatabaseAsync();
     app.ConfigurePipeline();
 
     app.Run();

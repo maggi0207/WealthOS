@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using WealthOS.Api.Filters;
 using WealthOS.Application;
 using WealthOS.Application.Authentication.Options;
 using WealthOS.Infrastructure;
@@ -32,7 +34,11 @@ public static class ServiceCollectionExtensions
                 options.SubstituteApiVersionInUrl = true;
             });
 
-        services.AddControllers();
+        services.AddControllers(options =>
+        {
+            options.Filters.Add<FluentValidationActionFilter>();
+        });
+
         services.AddEndpointsApiExplorer();
 
         services.AddSwaggerGen(options =>
@@ -43,6 +49,18 @@ public static class ServiceCollectionExtensions
                 Version = "v1",
                 Description = "Enterprise personal wealth management platform API.",
             });
+
+            var apiXml = Path.Combine(AppContext.BaseDirectory, "WealthOS.Api.xml");
+            var applicationXml = Path.Combine(AppContext.BaseDirectory, "WealthOS.Application.xml");
+            if (File.Exists(apiXml))
+            {
+                options.IncludeXmlComments(apiXml, includeControllerXmlComments: true);
+            }
+
+            if (File.Exists(applicationXml))
+            {
+                options.IncludeXmlComments(applicationXml);
+            }
 
             options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
@@ -73,10 +91,15 @@ public static class ServiceCollectionExtensions
         var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
             ?? throw new InvalidOperationException("JWT settings are not configured.");
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(options =>
             {
-                options.RequireHttpsMetadata = true;
+                options.RequireHttpsMetadata = false;
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -88,10 +111,17 @@ public static class ServiceCollectionExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromSeconds(30),
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+                    NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier,
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
 
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
