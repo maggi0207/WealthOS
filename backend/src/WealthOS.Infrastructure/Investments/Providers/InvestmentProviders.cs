@@ -93,49 +93,6 @@ public sealed class ManualInvestmentProvider : IInvestmentProvider
 }
 
 /// <summary>
-/// Angel One SmartAPI placeholder — no OAuth / live sync in Phase 7.
-/// </summary>
-public sealed class AngelOneProvider : IInvestmentProvider
-{
-    public ProviderKind Kind => ProviderKind.AngelOne;
-
-    public Task<Result> ConnectAsync(
-        Guid accountId,
-        Guid userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(NotImplemented("Connect"));
-
-    public Task<Result> SyncPortfolioAsync(
-        Guid accountId,
-        Guid userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(NotImplemented("SyncPortfolio"));
-
-    public Task<Result> SyncHoldingsAsync(
-        Guid accountId,
-        Guid userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(NotImplemented("SyncHoldings"));
-
-    public Task<Result> SyncTransactionsAsync(
-        Guid accountId,
-        Guid userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(NotImplemented("SyncTransactions"));
-
-    public Task<Result> DisconnectAsync(
-        Guid accountId,
-        Guid userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(NotImplemented("Disconnect"));
-
-    private static Result NotImplemented(string operation) =>
-        Result.Failure(Error.Failure(
-            "provider_not_implemented",
-            $"Angel One {operation} is a Phase 7 placeholder. SmartAPI integration is deferred."));
-}
-
-/// <summary>
 /// IndiaBonds placeholder — no live bond platform API in Phase 7.
 /// </summary>
 public sealed class IndiaBondsProvider : IInvestmentProvider

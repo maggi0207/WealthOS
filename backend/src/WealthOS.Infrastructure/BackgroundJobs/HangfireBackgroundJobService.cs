@@ -1,7 +1,8 @@
+using WealthOS.Infrastructure.BackgroundJobs.Jobs;
+using WealthOS.Infrastructure.BackgroundJobs;
 using Microsoft.Extensions.Logging;
 using WealthOS.Application.Common.Models;
 using WealthOS.Application.Notifications.Interfaces;
-using WealthOS.Infrastructure.BackgroundJobs.Jobs;
 
 namespace WealthOS.Infrastructure.BackgroundJobs;
 
@@ -72,9 +73,9 @@ public sealed class HangfireBackgroundJobService : IBackgroundJobService
             jobs => jobs.RunDocumentExpiryReminderAsync(CancellationToken.None),
             Hangfire.Cron.Daily(10));
 
-        Hangfire.RecurringJob.AddOrUpdate<NotificationStubJobs>(
+        Hangfire.RecurringJob.AddOrUpdate<AngelOneSyncJob>(
             InvestmentSync,
-            jobs => jobs.RunInvestmentSyncAsync(CancellationToken.None),
+            jobs => jobs.RunAsync(CancellationToken.None),
             Hangfire.Cron.Hourly());
 
         Hangfire.RecurringJob.AddOrUpdate<NotificationStubJobs>(

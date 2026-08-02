@@ -19,6 +19,7 @@ using WealthOS.Domain.Properties.Repositories;
 using WealthOS.Infrastructure.AI;
 using WealthOS.Infrastructure.Authentication.Services;
 using WealthOS.Infrastructure.BackgroundJobs;
+using WealthOS.Infrastructure.BackgroundJobs.Jobs;
 using WealthOS.Infrastructure.Dashboard;
 using WealthOS.Infrastructure.Documents.Repositories;
 using WealthOS.Infrastructure.Identity;
@@ -117,8 +118,12 @@ public static class DependencyInjection
         services.AddScoped<INotificationScheduleRepository, NotificationScheduleRepository>();
 
         services.AddScoped<IInvestmentProvider, ManualInvestmentProvider>();
+        services.Configure<AngelOneOptions>(configuration.GetSection(AngelOneOptions.SectionName));
+        services.AddSingleton<AngelOneTokenStore>();
+        services.AddHttpClient<AngelOneSmartApiClient>();
         services.AddScoped<IInvestmentProvider, AngelOneProvider>();
         services.AddScoped<IInvestmentProvider, IndiaBondsProvider>();
+        services.AddScoped<AngelOneSyncJob>();
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
