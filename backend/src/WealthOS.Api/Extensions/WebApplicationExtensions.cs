@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using WealthOS.Api.Middleware;
+using WealthOS.Infrastructure.BackgroundJobs;
 using WealthOS.Infrastructure.Documents;
 using WealthOS.Infrastructure.Goals;
 using WealthOS.Infrastructure.Identity;
 using WealthOS.Infrastructure.Income;
 using WealthOS.Infrastructure.Investments;
 using WealthOS.Infrastructure.Loans;
+using WealthOS.Infrastructure.Notifications;
 using WealthOS.Infrastructure.Persistence;
 using WealthOS.Infrastructure.Properties;
 using HealthChecks.UI.Client;
@@ -40,6 +42,11 @@ public static class WebApplicationExtensions
         app.UseAuthentication();
         app.UseAuthorization();
 
+        // Hangfire dashboard: Development = open; Production = authenticated users only.
+        // URL: /hangfire
+        app.UseHangfireDashboardSecure();
+        app.RegisterHangfireRecurringJobs();
+
         app.MapControllers();
 
         app.MapHealthChecks("/health", new HealthCheckOptions
@@ -63,5 +70,6 @@ public static class WebApplicationExtensions
         await InvestmentDataSeeder.SeedAsync(app.Services);
         await GoalDataSeeder.SeedAsync(app.Services);
         await DocumentDataSeeder.SeedAsync(app.Services);
+        await NotificationDataSeeder.SeedAsync(app.Services);
     }
 }

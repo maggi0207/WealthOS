@@ -14,8 +14,10 @@ using WealthOS.Domain.Goals.Repositories;
 using WealthOS.Domain.Income.Repositories;
 using WealthOS.Domain.Investments.Repositories;
 using WealthOS.Domain.Loans.Repositories;
+using WealthOS.Domain.Notifications.Repositories;
 using WealthOS.Domain.Properties.Repositories;
 using WealthOS.Infrastructure.Authentication.Services;
+using WealthOS.Infrastructure.BackgroundJobs;
 using WealthOS.Infrastructure.Dashboard;
 using WealthOS.Infrastructure.Documents.Repositories;
 using WealthOS.Infrastructure.Identity;
@@ -24,6 +26,7 @@ using WealthOS.Infrastructure.Income.Repositories;
 using WealthOS.Infrastructure.Investments.Providers;
 using WealthOS.Infrastructure.Investments.Repositories;
 using WealthOS.Infrastructure.Loans.Repositories;
+using WealthOS.Infrastructure.Notifications.Repositories;
 using WealthOS.Infrastructure.Persistence;
 using WealthOS.Infrastructure.Persistence.Interceptors;
 using WealthOS.Infrastructure.Persistence.Repositories;
@@ -104,6 +107,13 @@ public static class DependencyInjection
         services.AddScoped<IDocumentTagRepository, DocumentTagRepository>();
         services.AddScoped<IDocumentReminderRepository, DocumentReminderRepository>();
 
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
+        services.AddScoped<IReminderRepository, ReminderRepository>();
+        services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
+        services.AddScoped<IBackgroundJobLogRepository, BackgroundJobLogRepository>();
+        services.AddScoped<INotificationScheduleRepository, NotificationScheduleRepository>();
+
         services.AddScoped<IInvestmentProvider, ManualInvestmentProvider>();
         services.AddScoped<IInvestmentProvider, AngelOneProvider>();
         services.AddScoped<IInvestmentProvider, IndiaBondsProvider>();
@@ -115,6 +125,7 @@ public static class DependencyInjection
 
         services.AddAuthenticationOptions(configuration);
         services.AddDashboardInfrastructure();
+        services.AddHangfireBackgroundJobs(configuration);
 
         return services;
     }

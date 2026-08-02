@@ -8,6 +8,7 @@ using WealthOS.Domain.Goals.Entities;
 using WealthOS.Domain.Income.Entities;
 using WealthOS.Domain.Investments.Entities;
 using WealthOS.Domain.Loans.Entities;
+using WealthOS.Domain.Notifications.Entities;
 using WealthOS.Domain.Properties.Entities;
 
 namespace WealthOS.Infrastructure.Persistence;
@@ -116,6 +117,20 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
     public DbSet<DocumentLink> DocumentLinks => Set<DocumentLink>();
 
     public DbSet<DocumentReminder> DocumentReminders => Set<DocumentReminder>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+
+    public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
+
+    public DbSet<NotificationRecipient> NotificationRecipients => Set<NotificationRecipient>();
+
+    public DbSet<NotificationSchedule> NotificationSchedules => Set<NotificationSchedule>();
+
+    public DbSet<Reminder> Reminders => Set<Reminder>();
+
+    public DbSet<BackgroundJobLog> BackgroundJobLogs => Set<BackgroundJobLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
