@@ -9,12 +9,9 @@ import { HistorySheet } from "@/components/advisor/history-sheet";
 import { InsightRail } from "@/components/advisor/insight-rail";
 import { TopicChips } from "@/components/advisor/topic-chips";
 import { SectionHeader } from "@/components/ui-kit/section-header";
-import {
-  makeUserMessage,
-  mockAdvisorReply,
-  type ChatMessage,
-  type Conversation,
-} from "@/lib/advisor-data";
+import { useAiChat } from "@/hooks/api/use-ai";
+import type { ChatMessage, Conversation } from "@/lib/advisor-data";
+import { aiService } from "@/services/ai/ai-service";
 
 export const Route = createFileRoute("/_shell/ai-advisor")({
   head: () => ({
@@ -40,35 +37,57 @@ function AiAdvisorPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [conversationId, setConversationId] = useState<string | undefined>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const chat = useAiChat();
 
   useEffect(() => {
     inputRef.current?.focus();
-    return () => timers.current.forEach(clearTimeout);
   }, []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, typing]);
 
-  const ask = useCallback((text: string) => {
-    const question = text.trim();
-    if (!question) return;
-    setMessages((prev) => [...prev, makeUserMessage(question)]);
-    setInput("");
-    setTyping(true);
-    const timer = setTimeout(() => {
-      setMessages((prev) => [...prev, mockAdvisorReply(question)]);
-      setTyping(false);
-      inputRef.current?.focus();
-    }, 900);
-    timers.current.push(timer);
-  }, []);
+  const ask = useCallback(
+    (text: string) => {
+      const question = text.trim();
+      if (!question || typing) return;
+      setMessages((prev) => [...prev, aiService.createUserMessage(question)]);
+      setInput("");
+      setTyping(true);
+      void chat
+        .mutateAsync({ message: question, conversationId })
+        .then((result) => {
+          setConversationId(result.conversationId);
+          setMessages((prev) => [...prev, result.reply]);
+        })
+        .catch(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `err-${Date.now()}`,
+              role: "assistant",
+              text: "I couldn't reach the advisor service. Please try again.",
+              time: new Date().toLocaleTimeString("en-IN", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            },
+          ]);
+        })
+        .finally(() => {
+          setTyping(false);
+          inputRef.current?.focus();
+        });
+    },
+    [chat, conversationId, typing],
+  );
 
   const openConversation = useCallback((conversation: Conversation) => {
     setTyping(false);
+    setConversationId(conversation.id);
     setMessages(conversation.messages);
   }, []);
 
@@ -76,6 +95,7 @@ function AiAdvisorPage() {
     setTyping(false);
     setMessages([]);
     setInput("");
+    setConversationId(undefined);
     inputRef.current?.focus();
   }, []);
 
