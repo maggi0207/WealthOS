@@ -170,3 +170,65 @@ Ask for approval before:
 ---
 
 AGENTS.md is the highest priority instruction document in WealthOS. Every AI assistant must follow it before generating code.
+
+---
+
+## Cursor Cloud specific instructions
+
+WealthOS is a monorepo with a **TanStack Start / React frontend** (`frontend/`) and a **.NET 9 API** (`backend/`). The frontend currently uses **mock auth and mock data**; the backend is a separate PostgreSQL-backed API.
+
+### System dependencies (VM image)
+
+These are not installed by the update script:
+
+- **.NET 9 SDK** — pinned in `backend/global.json` (9.0.100+)
+- **Bun** — preferred package manager for `frontend/` (`bun.lock`)
+- **Docker** — required for PostgreSQL and integration tests (Testcontainers)
+
+Ensure `DOTNET_ROOT` and Bun are on `PATH` (e.g. `$HOME/.dotnet` and `$HOME/.bun/bin`).
+
+### Docker daemon
+
+Docker does not auto-start in Cloud Agent VMs. Before `docker compose` or integration tests:
+
+```bash
+sudo dockerd > /tmp/dockerd.log 2>&1 &
+sleep 3
+sudo chmod 666 /var/run/docker.sock   # or use sudo docker / docker group
+```
+
+### Starting services (manual, each session)
+
+**PostgreSQL** (required for the API):
+
+```bash
+sudo docker compose -f backend/docker/docker-compose.yml up -d postgres
+```
+
+**API** (http://localhost:5095):
+
+```bash
+cd backend && dotnet run --project src/WealthOS.Api
+```
+
+Dev seed admin: `admin@wealthos.local` / `Admin@WealthOS1!`. Health: `GET http://localhost:5095/health`.
+
+**Frontend** (http://localhost:5173):
+
+```bash
+cd frontend && bun run dev -- --host 0.0.0.0 --port 5173
+```
+
+Mock login accepts any email/password (e.g. `magesh@wealthos.app`).
+
+### Lint / test / build
+
+| Area | Command | Notes |
+|------|---------|-------|
+| Frontend lint | `cd frontend && bun run lint` | Many existing Prettier formatting findings |
+| Frontend build | `cd frontend && bun run build` | |
+| Backend build | `cd backend && dotnet build WealthOS.slnx` | |
+| Unit tests | `cd backend && dotnet test tests/WealthOS.UnitTests` | No Docker required |
+| Integration tests | `cd backend && dotnet test tests/WealthOS.IntegrationTests` | Requires Docker daemon + socket access |
+
+See `backend/README.md` for API and auth endpoint details.
