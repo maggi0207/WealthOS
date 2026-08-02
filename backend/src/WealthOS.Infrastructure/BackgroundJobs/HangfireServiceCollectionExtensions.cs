@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Hangfire;
 using Hangfire.Dashboard;
 using Hangfire.PostgreSql;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using WealthOS.Application.Notifications.Interfaces;
+using WealthOS.Domain.Authentication.Constants;
 using WealthOS.Infrastructure.BackgroundJobs.Jobs;
 
 namespace WealthOS.Infrastructure.BackgroundJobs;
@@ -36,9 +38,14 @@ public static class HangfireServiceCollectionExtensions
                     InvisibilityTimeout = TimeSpan.FromMinutes(30),
                 }));
 
+        var configuredWorkers = configuration.GetValue<int?>("Hangfire:WorkerCount");
+        var workerCount = configuredWorkers is > 0
+            ? configuredWorkers.Value
+            : Math.Max(1, Environment.ProcessorCount / 2);
+
         services.AddHangfireServer(options =>
         {
-            options.WorkerCount = Math.Max(1, Environment.ProcessorCount / 2);
+            options.WorkerCount = workerCount;
             options.Queues = ["default"];
             options.SchedulePollingInterval = TimeSpan.FromSeconds(30);
         });
@@ -89,7 +96,7 @@ public static class HangfireServiceCollectionExtensions
 }
 
 /// <summary>
-/// Development: allow all. Production: require authenticated principal.
+/// Development: allow all. Production: require authenticated Admin role (JWT Bearer).
 /// </summary>
 internal sealed class HangfireDashboardAuthorizationFilter : IDashboardAuthorizationFilter
 {
@@ -108,6 +115,13 @@ internal sealed class HangfireDashboardAuthorizationFilter : IDashboardAuthoriza
         }
 
         var httpContext = context.GetHttpContext();
-        return httpContext.User.Identity?.IsAuthenticated == true;
+        var user = httpContext.User;
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            return false;
+        }
+
+        return user.IsInRole(AuthRoles.Admin)
+            || user.HasClaim(ClaimTypes.Role, AuthRoles.Admin);
     }
 }

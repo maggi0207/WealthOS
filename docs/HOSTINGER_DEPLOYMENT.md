@@ -55,10 +55,13 @@ Build the SPA with API mode:
 
 ```bash
 cd ../../frontend
-# set VITE_API_MODE=api and VITE_API_BASE_URL=https://api.yourdomain.com in .env.production
+cp .env.production.example .env.production
+# edit VITE_API_BASE_URL to https://api.yourdomain.com
 npm ci
 npm run build
 ```
+
+Production builds force `VITE_API_MODE=api` unless `VITE_ALLOW_MOCK_PROD=true` is set.
 
 Deploy `.output/public` (or your host's static artifact) to Hostinger static hosting, Cloudflare Pages, or an Nginx `root` for the app subdomain. Ensure CORS origin matches `CORS_ORIGIN_0`.
 
@@ -69,7 +72,7 @@ Deploy `.output/public` (or your host's static artifact) to Hostinger static hos
 | Logs | `docker compose -f docker-compose.prod.yml logs -f api` |
 | Restart | `docker compose -f docker-compose.prod.yml restart api` |
 | Update | `git pull && docker compose -f docker-compose.prod.yml up -d --build` |
-| Hangfire | Browse `https://api.yourdomain.com/hangfire` (protect in prod) |
+| Hangfire | Browse `https://api.yourdomain.com/hangfire` with an Admin JWT (`Authorization: Bearer …`). Non-admins are denied. |
 
 ## 6. CI/CD readiness
 
@@ -96,6 +99,6 @@ Leave `ANGELONE_*` empty for stub sync. To enable read-only SmartAPI structure:
 - [ ] Strong Postgres password
 - [ ] TLS certificates valid
 - [ ] CORS locked to app origin
-- [ ] Hangfire dashboard restricted
+- [ ] Hangfire dashboard restricted (Admin JWT required)
 - [ ] Firewall: only 80/443 public
 - [ ] Regular backups of `wealthos_postgres_data`

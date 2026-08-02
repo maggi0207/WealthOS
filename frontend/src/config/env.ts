@@ -1,11 +1,19 @@
 /**
  * Vite environment configuration for WealthOS API integration.
  * Dashboard supports transparent mock ↔ api switching via VITE_API_MODE.
+ *
+ * Production builds default to `api` so a missing `.env.production` cannot
+ * accidentally ship mock fixtures. Set `VITE_ALLOW_MOCK_PROD=true` only for
+ * intentional demo/mock production builds.
  */
 
 export type ApiMode = "mock" | "api";
 
 function readMode(raw: string | undefined): ApiMode {
+  const allowMockProd = import.meta.env.VITE_ALLOW_MOCK_PROD === "true";
+  if (import.meta.env.PROD && !allowMockProd) {
+    return "api";
+  }
   return raw === "api" ? "api" : "mock";
 }
 

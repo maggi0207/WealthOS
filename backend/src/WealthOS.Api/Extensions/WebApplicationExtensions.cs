@@ -40,11 +40,12 @@ public static class WebApplicationExtensions
 
         app.UseHttpsRedirection();
         app.UseCors("WealthOsCors");
+        app.UseRateLimiter();
 
         app.UseAuthentication();
         app.UseAuthorization();
 
-        // Hangfire dashboard: Development = open; Production = authenticated users only.
+        // Hangfire dashboard: Development = open; Production = Admin JWT only.
         // URL: /hangfire
         app.UseHangfireDashboardSecure();
         app.RegisterHangfireRecurringJobs();

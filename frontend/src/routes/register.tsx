@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui-kit/field";
+import { isMockApiMode } from "@/config/env";
 import { useAuth } from "@/lib/mock-auth";
 import { AuthShell } from "@/components/auth/auth-shell";
 
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
       { title: "Create account — WealthOS" },
-      { name: "description", content: "Create your WealthOS workspace and start tracking net worth (demo)." },
+      { name: "description", content: "Create your WealthOS workspace and start tracking net worth." },
       { property: "og:title", content: "Create account — WealthOS" },
       { property: "og:description", content: "Create your WealthOS workspace and start tracking net worth." },
     ],
@@ -20,19 +21,31 @@ export const Route = createFileRoute("/register")({
   component: RegisterPage,
 });
 
+const STRONG_PASSWORD =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
+
 function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const mockMode = isMockApiMode();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [touched, setTouched] = useState({ name: false, email: false, password: false });
   const [pending, setPending] = useState(false);
 
+  const passwordError = mockMode
+    ? password.length >= 6
+      ? null
+      : "Use at least 6 characters"
+    : STRONG_PASSWORD.test(password)
+      ? null
+      : "Use 8+ chars with upper, lower, number, and symbol";
+
   const errors = {
     name: name.trim().length >= 2 ? null : "Enter your full name",
     email: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? null : "Enter a valid email address",
-    password: password.length >= 6 ? null : "Use at least 6 characters",
+    password: passwordError,
   };
   const invalid = Boolean(errors.name || errors.email || errors.password);
 
@@ -41,16 +54,25 @@ function RegisterPage() {
     setTouched({ name: true, email: true, password: true });
     if (invalid || pending) return;
     setPending(true);
-    await register(name, email, password);
-    toast.success("Workspace created (mock account)");
-    setPending(false);
-    navigate({ to: "/dashboard" });
+    try {
+      await register(name, email, password);
+      toast.success(mockMode ? "Workspace created (mock account)" : "Account created");
+      navigate({ to: "/dashboard" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Registration failed");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <AuthShell
       title="Create your workspace"
-      subtitle="Registration is mocked for this foundation build — no data leaves your browser."
+      subtitle={
+        mockMode
+          ? "Registration is mocked for this foundation build — no data leaves your browser."
+          : "Create a WealthOS account to sync your wealth data securely."
+      }
     >
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Field
@@ -83,7 +105,13 @@ function RegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
           onBlur={() => setTouched((t) => ({ ...t, password: true }))}
           error={touched.password ? errors.password : null}
-          hint={touched.password ? undefined : "Minimum 6 characters"}
+          hint={
+            touched.password
+              ? undefined
+              : mockMode
+                ? "Minimum 6 characters"
+                : "8+ chars with upper, lower, number, and symbol"
+          }
         />
         <Button type="submit" className="min-h-11 w-full rounded-full" disabled={pending}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}

@@ -1,8 +1,10 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
 using WealthOS.Api.Filters;
 using WealthOS.Application;
 using WealthOS.Application.Authentication.Options;
@@ -91,6 +93,11 @@ public static class ServiceCollectionExtensions
         var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
             ?? throw new InvalidOperationException("JWT settings are not configured.");
 
+        var isDevelopment = string.Equals(
+            configuration["ASPNETCORE_ENVIRONMENT"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+            "Development",
+            StringComparison.OrdinalIgnoreCase);
+
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -99,7 +106,8 @@ public static class ServiceCollectionExtensions
             })
             .AddJwtBearer(options =>
             {
-                options.RequireHttpsMetadata = false;
+                // Behind Nginx TLS termination the API listens on HTTP; metadata HTTPS only required outside Development.
+                options.RequireHttpsMetadata = !isDevelopment;
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -123,6 +131,21 @@ public static class ServiceCollectionExtensions
                 .Build();
         });
 
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("auth", httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 20,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
+        });
+
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
@@ -133,8 +156,18 @@ public static class ServiceCollectionExtensions
         {
             options.AddPolicy("WealthOsCors", policy =>
             {
+                var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+                if (origins.Length == 0)
+                {
+                    // Avoid WithOrigins() throwing on empty arrays; deny cross-origin until configured.
+                    policy.SetIsOriginAllowed(_ => false);
+                }
+                else
+                {
+                    policy.WithOrigins(origins);
+                }
+
                 policy
-                    .WithOrigins(configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();

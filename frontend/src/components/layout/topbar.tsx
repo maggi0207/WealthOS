@@ -105,8 +105,7 @@ export function Topbar() {
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
-                logout();
-                navigate({ to: "/login" });
+                void logout().then(() => navigate({ to: "/login" }));
               }}
             >
               <LogOut className="size-4" /> Sign out

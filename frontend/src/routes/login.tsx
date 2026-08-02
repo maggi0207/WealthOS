@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui-kit/field";
+import { isMockApiMode } from "@/config/env";
 import { useAuth } from "@/lib/mock-auth";
 import { AuthShell } from "@/components/auth/auth-shell";
 
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in — WealthOS" },
-      { name: "description", content: "Sign in to your WealthOS wealth workspace (demo mock login)." },
+      { name: "description", content: "Sign in to your WealthOS wealth workspace." },
       { property: "og:title", content: "Sign in — WealthOS" },
       { property: "og:description", content: "Sign in to your WealthOS wealth workspace." },
     ],
@@ -23,14 +24,17 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("alex@wealthos.app");
-  const [password, setPassword] = useState("demo1234");
+  const mockMode = isMockApiMode();
+  const [email, setEmail] = useState(mockMode ? "alex@wealthos.app" : "");
+  const [password, setPassword] = useState(mockMode ? "demo1234" : "");
   const [touched, setTouched] = useState({ email: false, password: false });
   const [pending, setPending] = useState(false);
 
   const errors = {
     email: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? null : "Enter a valid email address",
-    password: password.length >= 6 ? null : "Password must be at least 6 characters",
+    password: password.length >= (mockMode ? 6 : 8) ? null : mockMode
+      ? "Password must be at least 6 characters"
+      : "Password must be at least 8 characters",
   };
   const invalid = Boolean(errors.email || errors.password);
 
@@ -43,16 +47,25 @@ function LoginPage() {
     setTouched({ email: true, password: true });
     if (invalid || pending) return;
     setPending(true);
-    await login(email, password);
-    toast.success("Signed in (mock session)");
-    setPending(false);
-    navigate({ to: "/dashboard" });
+    try {
+      await login(email, password);
+      toast.success(mockMode ? "Signed in (mock session)" : "Signed in");
+      navigate({ to: "/dashboard" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sign in failed");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <AuthShell
       title="Welcome back"
-      subtitle="Sign in to your WealthOS workspace. Authentication is mocked — any credentials work."
+      subtitle={
+        mockMode
+          ? "Sign in to your WealthOS workspace. Authentication is mocked — any credentials work."
+          : "Sign in with your WealthOS account."
+      }
     >
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Field
