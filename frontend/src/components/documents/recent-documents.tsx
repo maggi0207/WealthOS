@@ -1,13 +1,34 @@
 import { Clock3 } from "lucide-react";
 import { toast } from "sonner";
 
-import { fmtDate, recentDocuments } from "@/lib/documents-data";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useDocumentsOverview } from "@/hooks/api/use-documents";
+import { fmtDate } from "@/lib/documents-data";
 
 /** Recently updated documents rail. */
 export function RecentDocuments() {
+  const { data, isPending, isError, refetch, isFetching } = useDocumentsOverview();
+
+  if (isPending) return <ListSkeleton rows={2} />;
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load recent documents</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="no-scrollbar bleed-gutter page-gutter flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0 lg:grid-cols-5">
-      {recentDocuments.map((doc) => (
+      {data.recent.map((doc) => (
         <button
           key={doc.id}
           type="button"

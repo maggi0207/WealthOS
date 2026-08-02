@@ -1,6 +1,8 @@
 import { Building2, FileText, Landmark, ShieldPlus, TrendingUp, UserRound, type LucideIcon } from "lucide-react";
 
-import { categoryCount, docCategories, type DocCategory } from "@/lib/documents-data";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useDocumentsOverview } from "@/hooks/api/use-documents";
+import { docCategories, type DocCategory } from "@/lib/documents-data";
 
 const icons: Record<DocCategory, LucideIcon> = {
   property: Building2,
@@ -13,6 +15,13 @@ const icons: Record<DocCategory, LucideIcon> = {
 
 /** Category grid — the entry point into the vault. */
 export function CategoryGrid({ onSelect }: { onSelect?: (category: DocCategory) => void }) {
+  const { data, isPending } = useDocumentsOverview();
+
+  if (isPending) return <ListSkeleton rows={2} />;
+
+  const countFor = (category: DocCategory) =>
+    (data?.documents ?? []).filter((d) => d.category === category).length;
+
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
       {docCategories.map((category) => {
@@ -29,7 +38,7 @@ export function CategoryGrid({ onSelect }: { onSelect?: (category: DocCategory) 
             </span>
             <p className="mt-2 truncate text-[13px] font-semibold">{category.label}</p>
             <p className="truncate text-[11px] tabular-nums text-muted-foreground">
-              {categoryCount(category.id)} files
+              {countFor(category.id)} files
             </p>
           </button>
         );

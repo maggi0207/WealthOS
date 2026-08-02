@@ -9,7 +9,8 @@ import { UploadFab } from "@/components/documents/upload-fab";
 import { VaultHero } from "@/components/documents/vault-hero";
 import { DefaultErrorComponent } from "@/components/ui-kit/default-error-component";
 import { SectionHeader } from "@/components/ui-kit/section-header";
-import { renewals, vaultSummary, type DocCategory } from "@/lib/documents-data";
+import { useDocumentsOverview } from "@/hooks/api/use-documents";
+import { type DocCategory } from "@/lib/documents-data";
 
 const description =
   "A secure vault for property, loan, investment, identity, insurance and tax documents with renewal reminders and search.";
@@ -30,7 +31,10 @@ export const Route = createFileRoute("/_shell/documents")({
 });
 
 function DocumentsPage() {
+  const { data } = useDocumentsOverview();
   const [category, setCategory] = useState<DocCategory | "all">("all");
+  const total = data?.summary.total ?? 0;
+  const renewalCount = data?.renewals.length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -39,7 +43,7 @@ function DocumentsPage() {
       <VaultHero />
 
       <section>
-        <SectionHeader title="Categories" action={<span>{vaultSummary.total} files</span>} />
+        <SectionHeader title="Categories" action={<span>{total} files</span>} />
         <CategoryGrid onSelect={setCategory} />
       </section>
 
@@ -51,7 +55,7 @@ function DocumentsPage() {
       <section>
         <SectionHeader
           title="Renewals"
-          action={<span className="tabular-nums">{renewals.length} tracked</span>}
+          action={<span className="tabular-nums">{renewalCount} tracked</span>}
         />
         <RenewalReminders />
       </section>

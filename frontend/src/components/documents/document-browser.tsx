@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FileText, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/ui-kit/empty-state";
 import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useDocumentsOverview } from "@/hooks/api/use-documents";
 import {
   docCategories,
   docStatusLabel,
-  documents,
   fmtDate,
   type DocCategory,
   type DocStatus,
@@ -28,15 +28,11 @@ export function DocumentBrowser({
   category: DocCategory | "all";
   onCategoryChange: (category: DocCategory | "all") => void;
 }) {
+  const { data, isPending, isError, refetch, isFetching } = useDocumentsOverview();
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 520);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const results = useMemo(() => {
+    const documents = data?.documents ?? [];
     const q = query.trim().toLowerCase();
     return documents.filter((doc) => {
       const inCategory = category === "all" || doc.category === category;
@@ -47,7 +43,24 @@ export function DocumentBrowser({
         (doc.linkedTo?.toLowerCase().includes(q) ?? false);
       return inCategory && inQuery;
     });
-  }, [query, category]);
+  }, [query, category, data?.documents]);
+
+  if (isPending) return <ListSkeleton rows={6} />;
+  if (isError) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load documents</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2.5">
@@ -88,9 +101,7 @@ export function DocumentBrowser({
         ))}
       </div>
 
-      {loading ? (
-        <ListSkeleton rows={5} />
-      ) : results.length === 0 ? (
+      {results.length === 0 ? (
         <EmptyState
           icon={FileText}
           title="No documents found"

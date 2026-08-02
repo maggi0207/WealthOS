@@ -2,10 +2,33 @@ import { BellRing, CalendarClock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/ui-kit/empty-state";
-import { fmtDate, renewals } from "@/lib/documents-data";
+import { ListSkeleton } from "@/components/ui-kit/skeletons";
+import { useDocumentsOverview } from "@/hooks/api/use-documents";
+import { fmtDate } from "@/lib/documents-data";
 
 /** Expiry and renewal reminders across the vault. */
 export function RenewalReminders() {
+  const { data, isPending, isError, refetch, isFetching } = useDocumentsOverview();
+
+  if (isPending) return <ListSkeleton rows={3} />;
+  if (isError || !data) {
+    return (
+      <div className="surface-tile px-4 py-6 text-center">
+        <p className="text-sm font-medium">Unable to load renewals</p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="press mt-3 inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const renewals = data.renewals;
+
   if (renewals.length === 0) {
     return (
       <EmptyState
