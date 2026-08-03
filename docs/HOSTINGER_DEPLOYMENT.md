@@ -1,136 +1,165 @@
-# Hostinger VPS deployment — WealthOS
+# Hostinger VPS deployment — WealthOS (shared VPS)
 
-This guide deploys WealthOS on the **same Hostinger VPS** already running
-[layaKPI-Tracker](https://github.com/maggi0207/layaKPI-Tracker) on the main domain.
+WealthOS coexists with other sites (e.g. layaKPI-Tracker) on the same Hostinger VPS.
+**Host Nginx** owns ports **80/443**. Docker publishes only:
 
-| App | Path on VPS | Domain role |
-|-----|-------------|-------------|
-| layaKPI-Tracker | `~/layaKPI-Tracker` | Main domain (`/` landing, `/app` dashboard, `/api`) |
-| WealthOS | `~/WealthOS` | **Subdomain** (recommended): `api.` / `wealth.` — see § Shared VPS notes |
+| Service  | Host port | Container |
+|----------|-----------|-----------|
+| Frontend | `3000`    | nginx:80  |
+| API      | `8080`    | aspnet:8080 |
+| Postgres | *(none)*  | internal  |
 
-Deploy automation mirrors layaKPI: GitHub Actions → SSH → `git reset` → `docker compose`.
+```
+Internet
+  → Host Nginx (80/443 + Let's Encrypt)
+      → wealthos.devenlight.com     → 127.0.0.1:3000  (frontend)
+      → api.wealthos.devenlight.com → 127.0.0.1:8080  (API)
+          → postgres (Docker network)
+```
 
-## Prerequisites
+## 1. Server preparation
 
-- Hostinger VPS with Ubuntu 22.04+ (already used by layaKPI)
-- Docker Engine + Docker Compose plugin
-- Subdomain DNS A records (do **not** bind WealthOS to port 80 if layaKPI already owns it)
-- TLS certificates for the WealthOS hostnames
-
-## Shared VPS notes (important)
-
-layaKPI publishes **host port 80** (and often 8080 / 5432). WealthOS `docker-compose.prod.yml` also wants **80/443**.
-
-Recommended layout:
-
-1. Keep layaKPI on the main domain (port 80).
-2. Point `api.yourdomain.com` (and optional `wealth.yourdomain.com`) at the VPS.
-3. Either:
-   - Change WealthOS nginx published ports in compose (e.g. `9080:80`, `9443:443`) and terminate TLS at Hostinger / Cloudflare proxy → those ports, **or**
-   - Stop publishing layaKPI on 80 only if you intentionally move that stack.
-
-WealthOS Postgres should stay on the **internal** Docker network (do not publish `5432` if layaKPI already uses it).
-
-## 1. One-time VPS setup
+- Ubuntu 22.04+ / 24.04 with host Nginx already serving other sites
+- DNS A records:
+  - `wealthos.devenlight.com` → VPS IP
+  - `api.wealthos.devenlight.com` → VPS IP
+- Docker Engine + Compose plugin
 
 ```bash
-# Clone beside layaKPI (same home directory pattern)
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+# re-login, then:
+docker --version
+docker compose version
+```
+
+## 2. Clone repository
+
+```bash
 cd ~
 git clone https://github.com/maggi0207/WealthOS.git
-cd WealthOS/backend/docker
-cp .env.example .env
-nano .env   # POSTGRES_PASSWORD, JWT_SECRET_KEY, CORS_ORIGIN_0, domain values
-
-mkdir -p nginx/certs
-# copy fullchain.pem and privkey.pem into nginx/certs/
+cd WealthOS
 ```
 
-Update `nginx/conf.d/wealthos.conf` `server_name` to your API hostname (e.g. `api.yourdomain.com`).
-
-First start:
+## 3. Configure environment
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env up -d --build
-docker compose -f docker-compose.prod.yml ps
-curl -fsS https://api.yourdomain.com/health
+cp docker/.env.production.example docker/.env.production
+nano docker/.env.production
 ```
 
-## 2. Frontend
+Required values:
 
-Build with API mode pointing at the WealthOS API subdomain:
+| Variable | Example |
+|----------|---------|
+| `POSTGRES_PASSWORD` | strong random password |
+| `JWT_SECRET_KEY` | ≥ 32 characters |
+| `CORS_ORIGIN_0` | `https://wealthos.devenlight.com` |
+| `JWT_ISSUER` | `https://api.wealthos.devenlight.com` |
+| `VITE_API_BASE_URL` | `https://api.wealthos.devenlight.com` |
+
+Optional: `ADMIN_SEED_*`, `ANGELONE_*`.
+
+## 4. Start containers
+
+From repository root (**do not** bind 80/443):
 
 ```bash
-cd ~/WealthOS/frontend   # or build in CI / locally
-cp .env.production.example .env.production
-# VITE_API_BASE_URL=https://api.yourdomain.com
-npm ci
-npm run build
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
+docker compose -f docker/docker-compose.prod.yml ps
 ```
 
-Deploy `.output/public` to Hostinger static hosting, Cloudflare Pages, or an Nginx root for `wealth.yourdomain.com`.
-CORS origin must match `CORS_ORIGIN_0` in the VPS `.env`.
+Local validation on the VPS:
 
-## 3. GitHub Actions (same secrets as layaKPI)
+```bash
+curl -fsS http://127.0.0.1:3000/          # frontend
+curl -fsS http://127.0.0.1:8080/health    # API health
+```
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `ci.yml` | Push / PR to `main` or `develop` | Backend Release build + unit tests; frontend build |
-| `deploy-hostinger.yml` | Push to `main` or **Run workflow** | SSH deploy (identical pattern to layaKPI) |
+## 5. Configure host Nginx
 
-### Secrets (reuse layaKPI names)
+```bash
+sudo mkdir -p /var/www/certbot
+sudo cp ~/WealthOS/docs/nginx-hostinger.conf /etc/nginx/sites-available/wealthos
+sudo ln -sf /etc/nginx/sites-available/wealthos /etc/nginx/sites-enabled/wealthos
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
-Add these to **WealthOS → Settings → Secrets and variables → Actions**
-(same values already used by layaKPI-Tracker):
+The sample config is in [`docs/nginx-hostinger.conf`](./nginx-hostinger.conf).
 
-| Secret | Used by | Notes |
-|--------|---------|-------|
-| `VPS_HOST` | Deploy | Hostinger VPS IP / hostname |
-| `VPS_USER` | Deploy | SSH user (e.g. the account that owns `~/WealthOS`) |
-| `VPS_SSH_KEY` | Deploy | Private key PEM |
+## 6. Configure SSL (Let's Encrypt on the host)
 
-Prefer **Organization secrets** so both repos share one set.
+Certificates stay on the **host** — never mounted into WealthOS containers.
 
-Deploy script (on the VPS):
+```bash
+sudo apt-get update
+sudo apt-get install -y certbot python3-certbot-nginx
 
-```text
+# After DNS propagates and HTTP vhosts exist:
+sudo certbot --nginx -d wealthos.devenlight.com -d api.wealthos.devenlight.com
+sudo certbot renew --dry-run
+```
+
+Certbot will adjust the site file SSL paths. Renewals are handled by the host timer.
+
+## 7. Health checks
+
+| URL | Expected |
+|-----|----------|
+| `http://127.0.0.1:8080/health` | API OK (container) |
+| `https://api.wealthos.devenlight.com/health` | API OK (public) |
+| `https://api.wealthos.devenlight.com/api/health` | Alias → `/health` via host Nginx |
+| `https://wealthos.devenlight.com/` | SPA |
+
+ASP.NET still maps health at `/health` (no app code change). Host Nginx aliases `/api/health`.
+
+## 8. Restart / update
+
+```bash
 cd ~/WealthOS
 git fetch --all
 git reset --hard origin/main
-cd backend/docker
-sudo docker compose -f docker-compose.prod.yml --env-file .env down
-sudo docker compose -f docker-compose.prod.yml --env-file .env build
-sudo docker compose -f docker-compose.prod.yml --env-file .env up -d
-sudo docker image prune -f
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
+docker image prune -f
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Optional repo variable for CI frontend builds: `VITE_API_BASE_URL`.
+GitHub Actions (`deploy-hostinger.yml`) runs the same compose path via SSH (`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`).
 
-## 4. Operations
+## 9. Rollback
 
-| Task | Command |
-|------|---------|
-| Logs | `cd ~/WealthOS/backend/docker && docker compose -f docker-compose.prod.yml logs -f api` |
-| Restart | `docker compose -f docker-compose.prod.yml restart api` |
-| Manual update | Same as the Actions script above |
-| Hangfire | `https://api.yourdomain.com/hangfire` with Admin JWT |
+```bash
+cd ~/WealthOS
+git log --oneline -5
+git reset --hard <previous-good-sha>
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
+```
 
-App secrets (JWT, DB password, Angel One) stay in `~/WealthOS/backend/docker/.env` — never in git.
+Database volume `wealthos_postgres_data` is preserved across rollbacks unless you explicitly `docker volume rm`.
 
-## 5. Angel One
+## 10. Migration from the old deployment
 
-Leave `ANGELONE_*` empty for stub sync. To enable read-only SmartAPI structure:
+| Old | New |
+|-----|-----|
+| `backend/docker/docker-compose.prod.yml` with **nginx** on 80/443 | `docker/docker-compose.prod.yml` — **no** container nginx, no 80/443 |
+| TLS certs in `backend/docker/nginx/certs` | Host Let's Encrypt via Certbot |
+| Env in `backend/docker/.env` | `docker/.env.production` |
+| Frontend static host / separate deploy | Frontend **container** on host port **3000** |
 
-- Set `ANGELONE_API_KEY`, `ANGELONE_CLIENT_CODE`
-- Set `ANGELONE_ENABLE_LIVE_SYNC=true` only after validating credentials
-- Trading remains disabled in code
+Migration steps:
+
+1. Stop old stack: `cd ~/WealthOS/backend/docker && docker compose -f docker-compose.prod.yml down` (keeps volume if not `-v`).
+2. Copy secrets into `~/WealthOS/docker/.env.production`.
+3. Start root compose (section 4).
+4. Install host Nginx site + Certbot (sections 5–6).
+5. Confirm layaKPI / other sites on 80/443 still work.
 
 ## Security checklist
 
-- [ ] Strong `JWT_SECRET_KEY` (≥ 32 chars)
-- [ ] Strong Postgres password (WealthOS DB, not shared with layaKPI)
-- [ ] TLS certificates valid for WealthOS hostnames
-- [ ] CORS locked to WealthOS app origin
-- [ ] No port 80/443 clash with layaKPI
-- [ ] Hangfire restricted (Admin JWT)
-- [ ] Firewall: only intended public ports open
-- [ ] Regular backups of `wealthos_postgres_data`
+- [ ] Strong `JWT_SECRET_KEY` and `POSTGRES_PASSWORD`
+- [ ] CORS locked to `https://wealthos.devenlight.com`
+- [ ] Docker does **not** publish 80/443
+- [ ] Postgres not published to the host
+- [ ] TLS only on host Nginx
+- [ ] Firewall allows 80/443 (host); 3000/8080 can stay localhost-only if preferred via compose bind `127.0.0.1:3000:80`

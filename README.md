@@ -1,19 +1,40 @@
 # WealthOS
 
-Enterprise wealth management platform.
+Enterprise-grade personal wealth management platform.
 
-## Repository Layout
+## Repository layout
 
 | Path | Purpose |
 |------|---------|
-| `frontend/` | Client applications and UI |
-| `backend/` | Server APIs and business services |
-| `docs/` | Architecture, ADRs, and project documentation |
-| `database/` | Schemas, migrations, and data scripts |
-| `docker/` | Container and compose configuration |
-| `scripts/` | Automation and operational scripts |
-| `.cursor/` | Cursor AI rules, workflows, prompts, and templates |
+| `frontend/` | React 19 / Vite / TanStack UI |
+| `backend/` | .NET 9 ASP.NET Core API |
+| `docker/` | **Production** Compose + env templates (shared VPS) |
+| `docs/` | Architecture and Hostinger deployment |
+| `database/` | Schema notes / scripts |
+| `scripts/` | Operational helpers |
+| `.cursor/` | AI agent rules |
 
-## Status
+## Local development
 
-Repository scaffold only. Application source, frameworks, and dependencies are not included yet.
+- Frontend: `cd frontend && npm run dev` (default `http://localhost:8080`)
+- API: `cd backend && dotnet run --project src/WealthOS.Api --launch-profile http`
+- Optional API+Postgres: `backend/docker/docker-compose.yml`
+
+## Production (Hostinger shared VPS)
+
+Host Nginx owns **80/443**. WealthOS containers publish **3000** (SPA) and **8080** (API) only.
+
+```bash
+cp docker/.env.production.example docker/.env.production
+# edit secrets
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
+```
+
+Full guide: [`docs/HOSTINGER_DEPLOYMENT.md`](docs/HOSTINGER_DEPLOYMENT.md)  
+Host Nginx sample: [`docs/nginx-hostinger.conf`](docs/nginx-hostinger.conf)
+
+Public hosts:
+
+- App: `https://wealthos.devenlight.com`
+- API: `https://api.wealthos.devenlight.com`
+- Health: `https://api.wealthos.devenlight.com/health` (alias `/api/health`)

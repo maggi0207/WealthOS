@@ -10,7 +10,8 @@ Project documentation for WealthOS.
 
 ## Guides
 
-- [Hostinger VPS deployment](./HOSTINGER_DEPLOYMENT.md) — Docker Compose production stack, Nginx TLS, CI/CD readiness
+- [Hostinger VPS deployment](./HOSTINGER_DEPLOYMENT.md) — shared VPS, host Nginx TLS, Docker on 3000/8080
+- [Host Nginx sample](./nginx-hostinger.conf) — `wealthos.devenlight.com` + `api.wealthos.devenlight.com`
 
 ## Notes
 

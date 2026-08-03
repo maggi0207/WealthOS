@@ -1,5 +1,5 @@
 # Matches maggi0207/layaKPI-Tracker Hostinger deploy pattern.
-# Reuse the same VPS_* secrets already configured for that repo (or org secrets).
+# Reuse VPS_* secrets (or org secrets). Host Nginx owns 80/443.
 name: Deploy to VPS
 
 on:
@@ -27,18 +27,14 @@ jobs:
           script: |
             set -e
 
-            # Same VPS as layaKPI-Tracker (main domain). WealthOS lives beside it.
             cd ~/WealthOS
 
-            # Reset local changes and pull the latest code
             git fetch --all
             git reset --hard origin/main
 
-            # Production stack (Postgres + API + Nginx TLS reverse proxy)
-            cd backend/docker
-            sudo docker compose -f docker-compose.prod.yml --env-file .env down
-            sudo docker compose -f docker-compose.prod.yml --env-file .env build
-            sudo docker compose -f docker-compose.prod.yml --env-file .env up -d
+            # Shared-VPS stack: frontend :3000, API :8080, Postgres internal
+            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production down
+            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production build
+            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d
 
-            # Clean up old unused Docker images to save VPS storage
-            sudo docker image prune -f
+            docker image prune -f
