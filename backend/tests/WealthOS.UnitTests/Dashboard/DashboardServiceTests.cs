@@ -16,6 +16,7 @@ public sealed class DashboardServiceTests
     private readonly Mock<IInvestmentSummaryProvider> _investment = new();
     private readonly Mock<IIncomeSummaryProvider> _income = new();
     private readonly Mock<IDocumentSummaryProvider> _document = new();
+    private readonly Mock<IManualAssetSummaryProvider> _manualAssets = new();
     private readonly IMapper _mapper;
 
     public DashboardServiceTests()
@@ -51,6 +52,10 @@ public sealed class DashboardServiceTests
         _document
             .Setup(provider => provider.GetSummaryAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DocumentModuleSummary { DocumentCount = 18, PendingReviewCount = 2 });
+
+        _manualAssets
+            .Setup(provider => provider.GetSummaryAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ManualAssetModuleSummary { TotalValue = 0m, AssetCount = 0 });
     }
 
     [Fact]
@@ -61,11 +66,12 @@ public sealed class DashboardServiceTests
         var result = await service.GetSummaryAsync();
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.NetWorth.Should().Be(2_486_400m);
-        result.Value.AssetValue.Should().Be(3_142_000m);
+        result.Value.NetWorth.Should().Be(2_109_400m);
+        result.Value.AssetValue.Should().Be(2_765_000m);
         result.Value.LiabilityValue.Should().Be(655_600m);
         result.Value.PropertyValue.Should().Be(1_068_000m);
         result.Value.InvestmentValue.Should().Be(1_697_000m);
+        result.Value.ManualAssetValue.Should().Be(0m);
         result.Value.LoanBalance.Should().Be(655_600m);
         result.Value.MonthlyIncome.Should().Be(24_800m);
         result.Value.MonthlyExpense.Should().Be(15_380m);
@@ -119,5 +125,6 @@ public sealed class DashboardServiceTests
             _investment.Object,
             _income.Object,
             _document.Object,
+            _manualAssets.Object,
             _mapper);
 }

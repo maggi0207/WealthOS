@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WealthOS.Domain.AI.Entities;
+using WealthOS.Domain.Assets.Entities;
 using WealthOS.Domain.Authentication.Entities;
 using WealthOS.Domain.Documents.Entities;
 using WealthOS.Domain.Goals.Entities;
@@ -163,6 +164,8 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
     public DbSet<ReportSnapshot> ReportSnapshots => Set<ReportSnapshot>();
 
     public DbSet<ReportExport> ReportExports => Set<ReportExport>();
+
+    public DbSet<ManualAsset> ManualAssets => Set<ManualAsset>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

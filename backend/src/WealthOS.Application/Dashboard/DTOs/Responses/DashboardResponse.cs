@@ -21,6 +21,8 @@ public sealed class DashboardResponse
 
     public decimal PropertyValue { get; init; }
 
+    public decimal ManualAssetValue { get; init; }
+
     public decimal LoanBalance { get; init; }
 
     public decimal ChangePercent { get; init; }

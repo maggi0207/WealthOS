@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using WealthOS.Application.Dashboard.Providers;
+using WealthOS.Infrastructure.Assets.Providers;
 using WealthOS.Infrastructure.Documents.Providers;
 using WealthOS.Infrastructure.Income.Providers;
 using WealthOS.Infrastructure.Investments.Providers;
@@ -20,6 +21,7 @@ public static class DashboardInfrastructureExtensions
         services.AddScoped<IInvestmentSummaryProvider, InvestmentSummaryProvider>();
         services.AddScoped<IIncomeSummaryProvider, IncomeSummaryProvider>();
         services.AddScoped<IDocumentSummaryProvider, DocumentSummaryProvider>();
+        services.AddScoped<IManualAssetSummaryProvider, ManualAssetSummaryProvider>();
 
         return services;
     }

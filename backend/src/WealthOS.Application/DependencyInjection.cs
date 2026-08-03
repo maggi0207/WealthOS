@@ -2,6 +2,7 @@ using System.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using WealthOS.Application.AI;
+using WealthOS.Application.Assets;
 using WealthOS.Application.Dashboard;
 using WealthOS.Application.Documents;
 using WealthOS.Application.Goals;
@@ -29,6 +30,7 @@ public static class DependencyInjection
         services.AddInvestmentsApplication();
         services.AddGoalsApplication();
         services.AddDocumentsApplication();
+        services.AddAssetsApplication();
         services.AddNotificationsApplication();
         services.AddAIApplication();
         services.AddReportsApplication();

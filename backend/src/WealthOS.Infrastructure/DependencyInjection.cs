@@ -6,6 +6,7 @@ using WealthOS.Application.Authentication;
 using WealthOS.Application.Authentication.Interfaces;
 using WealthOS.Application.Common.Interfaces;
 using WealthOS.Application.Investments.Providers;
+using WealthOS.Domain.Assets.Repositories;
 using WealthOS.Domain.Authentication.Entities;
 using WealthOS.Domain.Authentication.Repositories;
 using WealthOS.Domain.Common.Abstractions.Repositories;
@@ -17,6 +18,7 @@ using WealthOS.Domain.Loans.Repositories;
 using WealthOS.Domain.Notifications.Repositories;
 using WealthOS.Domain.Properties.Repositories;
 using WealthOS.Infrastructure.AI;
+using WealthOS.Infrastructure.Assets.Repositories;
 using WealthOS.Infrastructure.Authentication.Services;
 using WealthOS.Infrastructure.BackgroundJobs;
 using WealthOS.Infrastructure.BackgroundJobs.Jobs;
@@ -109,6 +111,8 @@ public static class DependencyInjection
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IDocumentTagRepository, DocumentTagRepository>();
         services.AddScoped<IDocumentReminderRepository, DocumentReminderRepository>();
+
+        services.AddScoped<IManualAssetRepository, ManualAssetRepository>();
 
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();

@@ -26,6 +26,7 @@ public sealed class DashboardMappingProfile : Profile
             .ForMember(dest => dest.MonthlyExpense, opt => opt.MapFrom(src => src.Financials.MonthlyExpense))
             .ForMember(dest => dest.InvestmentValue, opt => opt.MapFrom(src => src.Financials.InvestmentValue))
             .ForMember(dest => dest.PropertyValue, opt => opt.MapFrom(src => src.Financials.PropertyValue))
+            .ForMember(dest => dest.ManualAssetValue, opt => opt.MapFrom(src => src.Financials.ManualAssetValue))
             .ForMember(dest => dest.LoanBalance, opt => opt.MapFrom(src => src.Financials.LoanBalance))
             .ForMember(dest => dest.ChangePercent, opt => opt.MapFrom(src => src.Financials.ChangePercent))
             .ForMember(dest => dest.CurrencyCode, opt => opt.MapFrom(src => src.Financials.CurrencyCode))

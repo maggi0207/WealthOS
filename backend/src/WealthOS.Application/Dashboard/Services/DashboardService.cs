@@ -22,6 +22,7 @@ public sealed class DashboardService : IDashboardService
     private readonly IInvestmentSummaryProvider _investmentSummaryProvider;
     private readonly IIncomeSummaryProvider _incomeSummaryProvider;
     private readonly IDocumentSummaryProvider _documentSummaryProvider;
+    private readonly IManualAssetSummaryProvider _manualAssetSummaryProvider;
     private readonly IMapper _mapper;
 
     public DashboardService(
@@ -31,6 +32,7 @@ public sealed class DashboardService : IDashboardService
         IInvestmentSummaryProvider investmentSummaryProvider,
         IIncomeSummaryProvider incomeSummaryProvider,
         IDocumentSummaryProvider documentSummaryProvider,
+        IManualAssetSummaryProvider manualAssetSummaryProvider,
         IMapper mapper)
     {
         _currentUserService = currentUserService;
@@ -39,6 +41,7 @@ public sealed class DashboardService : IDashboardService
         _investmentSummaryProvider = investmentSummaryProvider;
         _incomeSummaryProvider = incomeSummaryProvider;
         _documentSummaryProvider = documentSummaryProvider;
+        _manualAssetSummaryProvider = manualAssetSummaryProvider;
         _mapper = mapper;
     }
 
@@ -150,6 +153,16 @@ public sealed class DashboardService : IDashboardService
             providerStatuses["document"] = "Unhealthy";
         }
 
+        try
+        {
+            _ = await _manualAssetSummaryProvider.GetSummaryAsync(userId, cancellationToken);
+            providerStatuses["manualAssets"] = "Healthy";
+        }
+        catch
+        {
+            providerStatuses["manualAssets"] = "Unhealthy";
+        }
+
         var providersReady = providerStatuses.Values.All(status => status == "Healthy");
 
         return Result.Success(new DashboardHealthResponse
@@ -213,8 +226,9 @@ public sealed class DashboardService : IDashboardService
         var loan = await _loanSummaryProvider.GetSummaryAsync(userId, cancellationToken);
         var investment = await _investmentSummaryProvider.GetSummaryAsync(userId, cancellationToken);
         var income = await _incomeSummaryProvider.GetSummaryAsync(userId, cancellationToken);
+        var manualAssets = await _manualAssetSummaryProvider.GetSummaryAsync(userId, cancellationToken);
 
-        var assetValue = property.TotalValue + investment.TotalValue;
+        var assetValue = property.TotalValue + investment.TotalValue + manualAssets.TotalValue;
         var liabilityValue = loan.TotalBalance;
         var netWorth = assetValue - liabilityValue;
 
@@ -227,12 +241,14 @@ public sealed class DashboardService : IDashboardService
             MonthlyExpense = income.MonthlyExpense,
             InvestmentValue = investment.TotalValue,
             PropertyValue = property.TotalValue,
+            ManualAssetValue = manualAssets.TotalValue,
             LoanBalance = loan.TotalBalance,
             CurrencyCode = ResolveCurrencyCode(
                 property.CurrencyCode,
                 loan.CurrencyCode,
                 investment.CurrencyCode,
-                income.CurrencyCode),
+                income.CurrencyCode,
+                manualAssets.CurrencyCode),
             ChangePercent = DemoChangePercent,
         };
     }

@@ -20,6 +20,8 @@ public sealed class FinancialSummary
 
     public decimal PropertyValue { get; init; }
 
+    public decimal ManualAssetValue { get; init; }
+
     public decimal LoanBalance { get; init; }
 
     public string CurrencyCode { get; init; } = "INR";
