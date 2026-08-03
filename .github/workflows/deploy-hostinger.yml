@@ -1,0 +1,130 @@
+name: Deploy Hostinger
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docker/**"
+      - "backend/docker/**"
+      - ".github/workflows/deploy-hostinger.yml"
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+jobs:
+  ci-gate:
+    name: CI gate
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: SSH deploy to Hostinger VPS
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    # Skip when VPS secrets are not configured yet.
+    if: ${{ secrets.HOSTINGER_SSH_HOST != '' && secrets.HOSTINGER_SSH_KEY != '' }}
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend for production
+        working-directory: frontend
+        env:
+          VITE_API_MODE: api
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_API_VERSION: "1"
+        run: |
+          if [ -z "${VITE_API_BASE_URL:-}" ]; then
+            echo "VITE_API_BASE_URL secret is required for deploy builds."
+            exit 1
+          fi
+          npm ci
+          npm run build
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: frontend/.output/public
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.HOSTINGER_SSH_KEY }}
+
+      - name: Add VPS to known_hosts
+        env:
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${PORT:-22}" -H "$HOST" >> ~/.ssh/known_hosts
+
+      - name: Pull and rebuild production stack
+        env:
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.HOSTINGER_DEPLOY_PATH }}
+        run: |
+          if [ -z "${DEPLOY_PATH:-}" ]; then
+            echo "HOSTINGER_DEPLOY_PATH secret is required (e.g. /opt/WealthOS)."
+            exit 1
+          fi
+          SSH_PORT="${PORT:-22}"
+          ssh -p "$SSH_PORT" "$USER@$HOST" "set -euo pipefail
+            cd \"$DEPLOY_PATH\"
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            cd backend/docker
+            docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+            docker compose -f docker-compose.prod.yml ps
+          "
+
+      - name: Sync frontend static build
+        if: ${{ secrets.HOSTINGER_FRONTEND_PATH != '' }}
+        env:
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          FRONTEND_PATH: ${{ secrets.HOSTINGER_FRONTEND_PATH }}
+        run: |
+          SSH_PORT="${PORT:-22}"
+          rsync -az --delete \
+            -e "ssh -p $SSH_PORT" \
+            frontend/.output/public/ \
+            "$USER@$HOST:$FRONTEND_PATH/"
+
+      - name: Smoke health check
+        env:
+          HEALTH_URL: ${{ secrets.HOSTINGER_HEALTH_URL }}
+        run: |
+          if [ -z "${HEALTH_URL:-}" ]; then
+            echo "HOSTINGER_HEALTH_URL not set — skipping smoke check."
+            exit 0
+          fi
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS "$HEALTH_URL"; then
+              echo "Health check OK"
+              exit 0
+            fi
+            echo "Attempt $i failed — waiting..."
+            sleep 10
+          done
+          echo "Health check failed after retries"
+          exit 1

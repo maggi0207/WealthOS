@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend build & unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore WealthOS.slnx
+
+      - name: Build (Release)
+        run: dotnet build WealthOS.slnx -c Release --no-restore
+
+      - name: Unit tests
+        run: >
+          dotnet test tests/WealthOS.UnitTests/WealthOS.UnitTests.csproj
+          -c Release
+          --no-build
+          --verbosity normal
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (production API mode)
+        env:
+          VITE_API_MODE: api
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_API_VERSION: "1"
+        run: |
+          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-https://api.yourdomain.com}"
+          npm run build
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/.output/public
+          if-no-files-found: warn
+          retention-days: 7

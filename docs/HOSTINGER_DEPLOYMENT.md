@@ -74,14 +74,40 @@ Deploy `.output/public` (or your host's static artifact) to Hostinger static hos
 | Update | `git pull && docker compose -f docker-compose.prod.yml up -d --build` |
 | Hangfire | Browse `https://api.yourdomain.com/hangfire` with an Admin JWT (`Authorization: Bearer …`). Non-admins are denied. |
 
-## 6. CI/CD readiness
+## 6. CI/CD (GitHub Actions)
 
-Suggested GitHub Actions flow:
+Workflows live under `.github/workflows/`:
 
-1. `dotnet test` / `dotnet build` on backend
-2. `npm run build` on frontend
-3. SSH deploy: pull + `docker compose -f docker-compose.prod.yml up -d --build`
-4. Smoke `GET /health`
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `ci.yml` | Push / PR to `main` or `develop` | Backend Release build + unit tests; frontend production build |
+| `deploy-hostinger.yml` | Push to `main` (path filters) or **Run workflow** | Re-runs CI, SSH deploys Docker stack, optional frontend rsync + health smoke |
+
+### Required repository secrets (Deploy)
+
+Configure under **Settings → Secrets and variables → Actions**:
+
+| Secret | Example | Required |
+|--------|---------|----------|
+| `HOSTINGER_SSH_HOST` | `192.0.2.10` or `api.yourdomain.com` | Yes (enables deploy job) |
+| `HOSTINGER_SSH_USER` | `root` | Yes |
+| `HOSTINGER_SSH_KEY` | Private key (PEM) for the VPS | Yes (enables deploy job) |
+| `HOSTINGER_SSH_PORT` | `22` | No (defaults to 22) |
+| `HOSTINGER_DEPLOY_PATH` | `/opt/WealthOS` | Yes |
+| `VITE_API_BASE_URL` | `https://api.yourdomain.com` | Yes (for deploy frontend build) |
+| `HOSTINGER_FRONTEND_PATH` | `/var/www/wealthos-app` | No (enables rsync of SPA) |
+| `HOSTINGER_HEALTH_URL` | `https://api.yourdomain.com/health` | No (enables smoke check) |
+
+Optional repo **variable**: `VITE_API_BASE_URL` — used by CI frontend builds when set.
+
+Create a GitHub Environment named `production` (referenced by the deploy job) and attach protection rules if desired.
+
+If SSH secrets are missing, the deploy job is skipped automatically — CI still runs.
+
+Manual deploy:
+
+1. Actions → **Deploy Hostinger** → **Run workflow**
+2. Or SSH: `git pull && cd backend/docker && docker compose -f docker-compose.prod.yml --env-file .env up -d --build`
 
 Secrets (JWT, DB password, Angel One) must live in the VPS `.env` or a vault — never in the repo.
 
