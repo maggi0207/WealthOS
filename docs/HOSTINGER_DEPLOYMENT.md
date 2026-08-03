@@ -76,7 +76,9 @@ curl -fsS http://127.0.0.1:3000/          # frontend
 curl -fsS http://127.0.0.1:8080/health    # API health
 ```
 
-## 5. Configure host Nginx
+## 5. Configure host Nginx (HTTP first)
+
+Use the HTTP-only sample so Nginx starts **before** certificates exist:
 
 ```bash
 sudo mkdir -p /var/www/certbot
@@ -86,22 +88,29 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+If a previous broken SSL site is enabled, remove or fix it first:
+
+```bash
+sudo rm -f /etc/nginx/sites-enabled/wealthos
+# then re-copy the HTTP-only file as above
+```
+
 The sample config is in [`docs/nginx-hostinger.conf`](./nginx-hostinger.conf).
 
 ## 6. Configure SSL (Let's Encrypt on the host)
 
-Certificates stay on the **host** — never mounted into WealthOS containers.
+Install Certbot if missing, then issue certificates. Certbot will rewrite the site to HTTPS.
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y certbot python3-certbot-nginx
 
-# After DNS propagates and HTTP vhosts exist:
+# DNS A records for both hosts must already point at this VPS:
 sudo certbot --nginx -d wealthos.devenlight.com -d api.wealthos.devenlight.com
 sudo certbot renew --dry-run
 ```
 
-Certbot will adjust the site file SSL paths. Renewals are handled by the host timer.
+Certificates stay on the **host** — never mounted into WealthOS containers.
 
 ## 7. Health checks
 
