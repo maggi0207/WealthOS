@@ -5,7 +5,7 @@ WealthOS coexists with other sites (e.g. layaKPI-Tracker) on the same Hostinger 
 
 | Service  | Host port | Container |
 |----------|-----------|-----------|
-| Frontend | `3000`    | nginx:80  |
+| Frontend | `3000`    | node:3000 (TanStack Start) |
 | API      | `8081`    | aspnet:8080 (host **8080** is used by layaKPI) |
 | Postgres | *(none)*  | internal  |
 
@@ -76,7 +76,38 @@ curl -fsS http://127.0.0.1:3000/          # frontend
 curl -fsS http://127.0.0.1:8081/health    # API health
 ```
 
-## 5. Configure host Nginx (HTTP first)
+## 5. Free host ports 80/443 (required on shared VPS)
+
+**Host Nginx** must own **80/443**. If another Docker stack publishes them (e.g. layaKPI), host Nginx and Certbot will fail with `bind() ... Address already in use`.
+
+Check:
+
+```bash
+sudo ss -tlnp | grep -E ':80|:443'
+sudo docker ps --format 'table {{.Names}}\t{{.Ports}}'
+```
+
+If you see `kpi_tracker_frontend … 0.0.0.0:80->80/tcp`, remap it off 80 (example: host **3001**):
+
+```bash
+# Locate compose (typical labels):
+docker inspect kpi_tracker_frontend --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'
+docker inspect kpi_tracker_frontend --format '{{index .Config.Labels "com.docker.compose.project.config_files"}}'
+```
+
+In that compose file, change the frontend publish from `80:80` to `127.0.0.1:3001:80`, then recreate:
+
+```bash
+cd <kpi-compose-dir>
+# edit ports for the frontend service, then:
+docker compose up -d --force-recreate
+# confirm Docker no longer holds :80
+sudo ss -tlnp | grep ':80' || echo "port 80 is free"
+```
+
+Add a **host** Nginx site for the KPI domain(s) that proxies to `127.0.0.1:3001` (and API to `127.0.0.1:8080`) so the existing site keeps working. Prefer binding KPI ports to `127.0.0.1` only.
+
+## 6. Configure host Nginx (HTTP first)
 
 Use the HTTP-only sample so Nginx starts **before** certificates exist:
 
@@ -85,7 +116,8 @@ sudo mkdir -p /var/www/certbot
 sudo cp ~/WealthOS/docs/nginx-hostinger.conf /etc/nginx/sites-available/wealthos
 sudo ln -sf /etc/nginx/sites-available/wealthos /etc/nginx/sites-enabled/wealthos
 sudo nginx -t
-sudo systemctl reload nginx
+sudo systemctl start nginx   # use start if inactive; reload if already running
+sudo systemctl enable nginx
 ```
 
 If a previous broken SSL site is enabled, remove or fix it first:
@@ -97,22 +129,27 @@ sudo rm -f /etc/nginx/sites-enabled/wealthos
 
 The sample config is in [`docs/nginx-hostinger.conf`](./nginx-hostinger.conf).
 
-## 6. Configure SSL (Let's Encrypt on the host)
+## 7. Configure SSL (Let's Encrypt on the host)
 
-Install Certbot if missing, then issue certificates. Certbot will rewrite the site to HTTPS.
+Install Certbot if missing. Prefer **webroot** on a shared VPS (avoids Certbot restarting Nginx while diagnosing port conflicts):
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y certbot python3-certbot-nginx
 
 # DNS A records for both hosts must already point at this VPS:
+sudo certbot certonly --webroot -w /var/www/certbot \
+  -d wealthos.devenlight.com \
+  -d api.wealthos.devenlight.com
+
+# Then install HTTPS into the Nginx site (or edit listen 443 blocks manually):
 sudo certbot --nginx -d wealthos.devenlight.com -d api.wealthos.devenlight.com
 sudo certbot renew --dry-run
 ```
 
 Certificates stay on the **host** — never mounted into WealthOS containers.
 
-## 7. Health checks
+## 8. Health checks
 
 | URL | Expected |
 |-----|----------|
@@ -123,7 +160,7 @@ Certificates stay on the **host** — never mounted into WealthOS containers.
 
 ASP.NET still maps health at `/health` (no app code change). Host Nginx aliases `/api/health`.
 
-## 8. Restart / update
+## 9. Restart / update
 
 ```bash
 cd ~/WealthOS
@@ -136,7 +173,7 @@ sudo nginx -t && sudo systemctl reload nginx
 
 GitHub Actions (`deploy-hostinger.yml`) runs the same compose path via SSH (`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`).
 
-## 9. Rollback
+## 10. Rollback
 
 ```bash
 cd ~/WealthOS
@@ -147,22 +184,22 @@ docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.producti
 
 Database volume `wealthos_postgres_data` is preserved across rollbacks unless you explicitly `docker volume rm`.
 
-## 10. Migration from the old deployment
+## 11. Migration from the old deployment
 
 | Old | New |
 |-----|-----|
 | `backend/docker/docker-compose.prod.yml` with **nginx** on 80/443 | `docker/docker-compose.prod.yml` — **no** container nginx, no 80/443 |
 | TLS certs in `backend/docker/nginx/certs` | Host Let's Encrypt via Certbot |
 | Env in `backend/docker/.env` | `docker/.env.production` |
-| Frontend static host / separate deploy | Frontend **container** on host port **3000** |
+| Frontend static nginx image | Frontend **node-server** container on host port **3000** |
 
 Migration steps:
 
 1. Stop old stack: `cd ~/WealthOS/backend/docker && docker compose -f docker-compose.prod.yml down` (keeps volume if not `-v`).
 2. Copy secrets into `~/WealthOS/docker/.env.production`.
 3. Start root compose (section 4).
-4. Install host Nginx site + Certbot (sections 5–6).
-5. Confirm layaKPI / other sites on 80/443 still work.
+4. Free Docker from 80/443, install host Nginx for KPI + WealthOS, then Certbot (sections 5–7).
+5. Confirm layaKPI / other sites still work via host Nginx.
 
 ## Security checklist
 
@@ -171,4 +208,4 @@ Migration steps:
 - [ ] Docker does **not** publish 80/443
 - [ ] Postgres not published to the host
 - [ ] TLS only on host Nginx
-- [ ] Firewall allows 80/443 (host); 3000/8081 can stay localhost-only if preferred via compose bind `127.0.0.1:3000:80`
+- [ ] Firewall allows 80/443 (host); 3000/8081 can stay localhost-only if preferred via compose bind `127.0.0.1:3000:3000`

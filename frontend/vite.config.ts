@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Lovable defaults to cloudflare-module. Docker sets NITRO_PRESET=node-server
+  // so the image can run `node .output/server/index.mjs`.
+  ...(process.env.NITRO_PRESET
+    ? { nitro: { preset: process.env.NITRO_PRESET } }
+    : {}),
 });
