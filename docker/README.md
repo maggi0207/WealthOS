@@ -6,7 +6,7 @@ Production container orchestration for WealthOS on a **shared** Hostinger VPS.
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.prod.yml` | Postgres + API + frontend (ports **8080** / **3000** only) |
+| `docker-compose.prod.yml` | Postgres + API + frontend (host ports **8081** / **3000**) |
 | `.env.production.example` | Template → copy to `.env.production` on the VPS |
 
 ## Quick start
@@ -23,7 +23,7 @@ Validate:
 
 ```bash
 curl -fsS http://127.0.0.1:3000/
-curl -fsS http://127.0.0.1:8080/health
+curl -fsS http://127.0.0.1:8081/health
 ```
 
 Host TLS and public hostnames are configured outside Docker — see [`docs/HOSTINGER_DEPLOYMENT.md`](../docs/HOSTINGER_DEPLOYMENT.md).

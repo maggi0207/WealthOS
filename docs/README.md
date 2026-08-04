@@ -10,7 +10,7 @@ Project documentation for WealthOS.
 
 ## Guides
 
-- [Hostinger VPS deployment](./HOSTINGER_DEPLOYMENT.md) — shared VPS, host Nginx TLS, Docker on 3000/8080
+- [Hostinger VPS deployment](./HOSTINGER_DEPLOYMENT.md) — shared VPS, host Nginx TLS, Docker on 3000/8081
 - [Host Nginx sample](./nginx-hostinger.conf) — `wealthos.devenlight.com` + `api.wealthos.devenlight.com`
 
 ## Notes

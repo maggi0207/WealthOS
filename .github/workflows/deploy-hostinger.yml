@@ -32,7 +32,7 @@ jobs:
             git fetch --all
             git reset --hard origin/main
 
-            # Shared-VPS stack: frontend :3000, API :8080, Postgres internal
+            # Shared-VPS stack: frontend :3000, API :8081 (8080 = layaKPI), Postgres internal
             docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production down
             docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production build
             docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d

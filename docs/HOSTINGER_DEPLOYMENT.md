@@ -6,14 +6,14 @@ WealthOS coexists with other sites (e.g. layaKPI-Tracker) on the same Hostinger 
 | Service  | Host port | Container |
 |----------|-----------|-----------|
 | Frontend | `3000`    | nginx:80  |
-| API      | `8080`    | aspnet:8080 |
+| API      | `8081`    | aspnet:8080 (host **8080** is used by layaKPI) |
 | Postgres | *(none)*  | internal  |
 
 ```
 Internet
   → Host Nginx (80/443 + Let's Encrypt)
       → wealthos.devenlight.com     → 127.0.0.1:3000  (frontend)
-      → api.wealthos.devenlight.com → 127.0.0.1:8080  (API)
+      → api.wealthos.devenlight.com → 127.0.0.1:8081  (API)
           → postgres (Docker network)
 ```
 
@@ -73,7 +73,7 @@ Local validation on the VPS:
 
 ```bash
 curl -fsS http://127.0.0.1:3000/          # frontend
-curl -fsS http://127.0.0.1:8080/health    # API health
+curl -fsS http://127.0.0.1:8081/health    # API health
 ```
 
 ## 5. Configure host Nginx (HTTP first)
@@ -116,7 +116,7 @@ Certificates stay on the **host** — never mounted into WealthOS containers.
 
 | URL | Expected |
 |-----|----------|
-| `http://127.0.0.1:8080/health` | API OK (container) |
+| `http://127.0.0.1:8081/health` | API OK (container host port) |
 | `https://api.wealthos.devenlight.com/health` | API OK (public) |
 | `https://api.wealthos.devenlight.com/api/health` | Alias → `/health` via host Nginx |
 | `https://wealthos.devenlight.com/` | SPA |
@@ -171,4 +171,4 @@ Migration steps:
 - [ ] Docker does **not** publish 80/443
 - [ ] Postgres not published to the host
 - [ ] TLS only on host Nginx
-- [ ] Firewall allows 80/443 (host); 3000/8080 can stay localhost-only if preferred via compose bind `127.0.0.1:3000:80`
+- [ ] Firewall allows 80/443 (host); 3000/8081 can stay localhost-only if preferred via compose bind `127.0.0.1:3000:80`

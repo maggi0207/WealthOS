@@ -22,7 +22,7 @@ Enterprise-grade personal wealth management platform.
 
 ## Production (Hostinger shared VPS)
 
-Host Nginx owns **80/443**. WealthOS containers publish **3000** (SPA) and **8080** (API) only.
+Host Nginx owns **80/443**. WealthOS containers publish **3000** (SPA) and **8081** (API) only — host **8080** is reserved for layaKPI.
 
 ```bash
 cp docker/.env.production.example docker/.env.production
