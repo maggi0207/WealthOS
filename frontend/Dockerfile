@@ -1,12 +1,22 @@
 # Multi-stage production image for WealthOS SPA (static assets via nginx).
 # Build args inject VITE_* at compile time.
+#
+# Use Debian (glibc) for the Node build stage — Alpine/musl often misses
+# lightningcss / @tailwindcss/oxide optional native binaries when the lockfile
+# was generated on Windows.
 
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY package.json package-lock.json ./
-# Use npm install (not ci): lockfile can omit Linux optional deps when generated on Windows.
-RUN npm install --no-audit --no-fund
+RUN npm install --no-audit --no-fund --include=optional \
+  && npm install --no-save --no-audit --no-fund \
+       lightningcss-linux-x64-gnu@1.33.0 \
+       @tailwindcss/oxide-linux-x64-gnu@4.3.3
 
 COPY . .
 
