@@ -59,13 +59,16 @@ type AccountDto = {
   id: string;
   name: string;
   ownerName?: string | null;
+  providerId?: string | null;
   providerName?: string | null;
+  providerKind?: number | string | null;
   kindLabel?: string | null;
   status: number | string;
   lastSyncedAt?: string | null;
   currentValue: number;
   dayChangePercent?: number;
   holdingCount?: number;
+  holdingsCount?: number;
 };
 
 type AccountListDto = { items: AccountDto[] };
@@ -117,9 +120,11 @@ function n(v: unknown, f = 0) {
 
 function mapStatus(s: number | string): AccountStatus {
   const k = String(s);
-  if (k === "1" || k === "Manual") return "manual";
-  if (k === "2" || k === "Disconnected" || k === "3") return "soon";
-  return "connected";
+  if (k === "0" || k === "Manual") return "manual";
+  if (k === "1" || k === "Connected") return "connected";
+  if (k === "2" || k === "ComingSoon") return "soon";
+  if (k === "3" || k === "Disconnected") return "disconnected";
+  return "manual";
 }
 
 function mapHoldingCategory(c: number | string, name?: string | null): Holding["category"] {
@@ -204,11 +209,15 @@ class InvestmentService extends BaseApiService {
         name: a.name,
         owner: a.ownerName || "—",
         kind: a.kindLabel || a.providerName || "Investment",
+        providerName: a.providerName || undefined,
+        providerKind: a.providerKind ?? undefined,
+        providerId: a.providerId ? String(a.providerId) : undefined,
         status: mapStatus(a.status),
         lastSync: relativeSync(a.lastSyncedAt),
+        lastSyncedAt: a.lastSyncedAt ?? null,
         value: n(a.currentValue),
         dayChangePct: n(a.dayChangePercent),
-        holdings: n(a.holdingCount),
+        holdings: n(a.holdingsCount ?? a.holdingCount),
       })),
       holdings: (holdings.items ?? []).map((h) => ({
         id: String(h.id),
@@ -330,6 +339,24 @@ class InvestmentService extends BaseApiService {
   async recordTransaction(body: RecordTransactionRequestDto): Promise<unknown> {
     if (isMockApiMode()) return {};
     return this.post<unknown>("/investments/transactions", body);
+  }
+
+  async connectProvider(accountId: string): Promise<void> {
+    if (isMockApiMode()) return;
+    await this.post<unknown>(`/investments/providers/${accountId}/connect`, {});
+  }
+
+  async syncProvider(
+    accountId: string,
+    target: "portfolio" | "holdings" | "transactions" = "holdings",
+  ): Promise<void> {
+    if (isMockApiMode()) return;
+    await this.post<unknown>(`/investments/providers/${accountId}/sync?target=${target}`, {});
+  }
+
+  async disconnectProvider(accountId: string): Promise<void> {
+    if (isMockApiMode()) return;
+    await this.post<unknown>(`/investments/providers/${accountId}/disconnect`, {});
   }
 }
 

@@ -104,3 +104,33 @@ export function useRecordInvestmentTransaction() {
     onSuccess: () => invalidateInvestments(queryClient),
   });
 }
+
+export function useConnectInvestmentProvider() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (accountId: string) => investmentService.connectProvider(accountId),
+    onSuccess: () => invalidateInvestments(queryClient),
+  });
+}
+
+export function useSyncInvestmentProvider() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      accountId,
+      target = "holdings",
+    }: {
+      accountId: string;
+      target?: "portfolio" | "holdings" | "transactions";
+    }) => investmentService.syncProvider(accountId, target),
+    onSuccess: () => invalidateInvestments(queryClient),
+  });
+}
+
+export function useDisconnectInvestmentProvider() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (accountId: string) => investmentService.disconnectProvider(accountId),
+    onSuccess: () => invalidateInvestments(queryClient),
+  });
+}

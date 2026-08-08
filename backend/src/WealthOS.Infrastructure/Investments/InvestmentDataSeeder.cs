@@ -83,9 +83,9 @@ public static class InvestmentDataSeeder
             {
                 Kind = ProviderKind.AngelOne,
                 Name = "Angel One",
-                Description = "Angel One broker (SmartAPI placeholder — no live sync).",
+                Description = "Angel One broker — connect and sync holdings from Investments.",
                 IsEnabled = true,
-                SupportsSync = false,
+                SupportsSync = true,
             },
             new InvestmentProvider(ProviderIndiaBondsId)
             {

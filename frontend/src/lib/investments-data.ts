@@ -23,15 +23,19 @@ export const portfolioReturnPct = (portfolioReturn / portfolioSummary.invested) 
 
 /* ---------------------------- Investment accounts --------------------------- */
 
-export type AccountStatus = "connected" | "manual" | "soon";
+export type AccountStatus = "connected" | "manual" | "soon" | "disconnected";
 
 export type InvestmentAccount = {
   id: string;
   name: string;
   owner: string;
   kind: string;
+  providerName?: string;
+  providerKind?: number | string;
+  providerId?: string;
   status: AccountStatus;
   lastSync: string;
+  lastSyncedAt?: string | null;
   value: number;
   dayChangePct: number;
   holdings: number;
@@ -87,9 +91,10 @@ export const accounts: InvestmentAccount[] = [
 export const accountsTotal = accounts.reduce((sum, a) => sum + a.value, 0);
 
 export const statusLabel: Record<AccountStatus, string> = {
-  connected: "Connected (Mock)",
+  connected: "Connected",
   manual: "Manual",
   soon: "Coming Soon",
+  disconnected: "Disconnected",
 };
 
 /* -------------------------------- Allocation -------------------------------- */

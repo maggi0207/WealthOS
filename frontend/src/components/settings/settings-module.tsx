@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   Bell,
   Download,
@@ -702,6 +703,11 @@ export function SettingsModule() {
                     {draft[item.key] ? "Connected" : "Not connected"}
                     {!item.live ? " · Coming soon" : ""}
                   </p>
+                  {item.key === "angelOneConnected" ? (
+                    <Link to="/investments" className="mt-1 inline-block text-xs font-medium text-primary hover:underline">
+                      Open live Angel One panel
+                    </Link>
+                  ) : null}
                 </div>
                 {item.live ? (
                   <Button

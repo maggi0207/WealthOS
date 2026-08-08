@@ -1,10 +1,11 @@
-import { CircleDashed, Clock3, Plus, RefreshCw, ShieldCheck, PencilLine } from "lucide-react";
+import { CircleDashed, Clock3, Plus, RefreshCw, ShieldCheck, PencilLine, Unplug } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AccountFormSheet } from "@/components/investments/account-form-sheet";
 import { ListSkeleton } from "@/components/ui-kit/skeletons";
-import { useInvestmentsOverview } from "@/hooks/api/use-investments";
+import { useInvestmentsOverview, useSyncInvestmentProvider } from "@/hooks/api/use-investments";
+import { toastMutationError } from "@/lib/form-utils";
 import { fmtINRShort, statusLabel, type AccountStatus, type InvestmentAccount } from "@/lib/investments-data";
 import { cn } from "@/lib/utils";
 
@@ -12,19 +13,23 @@ const statusStyle: Record<AccountStatus, string> = {
   connected: "bg-success/12 text-success",
   manual: "bg-secondary text-muted-foreground",
   soon: "bg-amber-500/12 text-amber-500",
+  disconnected: "bg-destructive/10 text-destructive",
 };
 
 const statusIcon = {
   connected: ShieldCheck,
   manual: PencilLine,
   soon: Clock3,
+  disconnected: Unplug,
 } as const;
 
 /** Investment accounts — snap-scrolling on phones, grid from sm up. */
 export function AccountCards() {
   const { data, isPending, isError, refetch, isFetching } = useInvestmentsOverview();
+  const syncProvider = useSyncInvestmentProvider();
   const [createOpen, setCreateOpen] = useState(false);
   const [editAccount, setEditAccount] = useState<InvestmentAccount | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   if (isPending) return <ListSkeleton rows={3} />;
   if (isError || !data) {
@@ -43,12 +48,35 @@ export function AccountCards() {
     );
   }
 
+  const onSync = async (account: InvestmentAccount) => {
+    if (account.status === "soon" || account.status === "manual") {
+      toast.message(
+        account.status === "manual"
+          ? `${account.name} — sync not required for manual accounts`
+          : `${account.name} — integration coming soon`,
+      );
+      return;
+    }
+
+    setSyncingId(account.id);
+    try {
+      await syncProvider.mutateAsync({ accountId: account.id, target: "holdings" });
+      toast.success(`${account.name} (${account.owner}) synced`);
+      await refetch();
+    } catch (error) {
+      toastMutationError(error, `Could not sync ${account.name}`);
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
   return (
     <>
       <div className="no-scrollbar bleed-gutter page-gutter flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-3">
         {data.accounts.map((account) => {
           const Icon = statusIcon[account.status];
           const up = account.dayChangePct >= 0;
+          const syncing = syncingId === account.id;
           return (
             <article
               key={account.id}
@@ -92,18 +120,12 @@ export function AccountCards() {
                 <span className="truncate text-[11px] text-muted-foreground">{account.lastSync}</span>
                 <button
                   type="button"
-                  disabled={account.status === "soon"}
-                  onClick={() =>
-                    toast.success(
-                      account.status === "manual"
-                        ? `${account.name} — sync not required for manual accounts`
-                        : `${account.name} (${account.owner}) — mock sync complete`,
-                    )
-                  }
+                  disabled={account.status === "soon" || syncing}
+                  onClick={() => void onSync(account)}
                   aria-label={`Sync ${account.name} ${account.owner}`}
                   className="press grid size-11 shrink-0 place-items-center rounded-xl bg-secondary/70 text-muted-foreground disabled:opacity-40 md:size-9"
                 >
-                  <RefreshCw className="size-4" />
+                  <RefreshCw className={cn("size-4", syncing && "animate-spin")} />
                 </button>
               </div>
             </article>

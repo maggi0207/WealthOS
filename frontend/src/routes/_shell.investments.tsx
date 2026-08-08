@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { AccountCards } from "@/components/investments/account-cards";
 import { AddInvestmentFab } from "@/components/investments/add-investment-fab";
+import { AngelOneLinkCard } from "@/components/investments/angel-one-link-card";
 import { HoldingsList } from "@/components/investments/holdings-list";
 import { InvestmentAllocationDonut } from "@/components/investments/investment-allocation";
 import { InvestmentInsights } from "@/components/investments/investment-insights";
@@ -39,6 +40,11 @@ function InvestmentsPage() {
       <h1 className="sr-only">Investments</h1>
 
       <PortfolioHero />
+
+      <section>
+        <SectionHeader title="Angel One" />
+        <AngelOneLinkCard />
+      </section>
 
       <section>
         <SectionHeader title="Accounts" action={<span>Swipe →</span>} />
