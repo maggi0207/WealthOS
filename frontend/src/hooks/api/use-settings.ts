@@ -16,7 +16,14 @@ export const settingsKeys = {
 export function useSettings() {
   return useQuery({
     queryKey: settingsKeys.detail(),
-    queryFn: () => settingsService.get(),
+    queryFn: ({ signal }) => {
+      const timeout = AbortSignal.timeout(15_000);
+      const merged =
+        typeof AbortSignal.any === "function"
+          ? AbortSignal.any([signal, timeout])
+          : timeout;
+      return settingsService.get(merged);
+    },
     retry: 1,
     staleTime: 30_000,
   });

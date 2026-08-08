@@ -53,9 +53,9 @@ const mockSettings: UserSettingsDto = {
 class SettingsService extends BaseApiService {
   protected readonly serviceName = "SettingsService";
 
-  async get(): Promise<UserSettingsDto> {
+  async get(signal?: AbortSignal): Promise<UserSettingsDto> {
     if (isMockApiMode()) return structuredClone(mockSettings);
-    return this.getRequest<UserSettingsDto>("/settings");
+    return this.getRequest<UserSettingsDto>("/settings", signal);
   }
 
   async updateProfile(body: UpdateProfileSettingsRequest): Promise<UserSettingsDto> {
@@ -136,8 +136,8 @@ class SettingsService extends BaseApiService {
     await this.deleteRequest<unknown>("/settings/account");
   }
 
-  private getRequest<T>(path: string) {
-    return this.get<T>(path);
+  private getRequest<T>(path: string, signal?: AbortSignal) {
+    return this.get<T>(path, { signal });
   }
 
   private deleteRequest<T>(path: string) {
