@@ -36,18 +36,18 @@ function ShellLayout() {
   if (!user) return <Navigate to="/login" />;
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-svh w-full overflow-x-hidden bg-background">
+    <SidebarProvider className="h-svh min-h-0 overflow-hidden">
+      <div className="flex h-svh w-full overflow-hidden bg-background">
         <AppSidebar />
-        <SidebarInset className="min-w-0 bg-transparent">
+        <SidebarInset className="min-h-0 min-w-0 overflow-hidden bg-transparent">
           <Topbar />
-          <main className="min-w-0 flex-1 page-gutter py-4 sm:py-6">
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain page-gutter py-4 sm:py-6">
             <div className="mx-auto w-full min-w-0 max-w-7xl pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0">
               <PageTransition>
                 <Outlet />
               </PageTransition>
             </div>
-          </main>
+          </div>
 
           <BottomNav />
         </SidebarInset>
