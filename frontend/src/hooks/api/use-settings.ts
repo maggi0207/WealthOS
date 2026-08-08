@@ -17,6 +17,8 @@ export function useSettings() {
   return useQuery({
     queryKey: settingsKeys.detail(),
     queryFn: () => settingsService.get(),
+    retry: 1,
+    staleTime: 30_000,
   });
 }
 

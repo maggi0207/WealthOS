@@ -32,9 +32,61 @@ import {
   useUpdateSecuritySettings,
 } from "@/hooks/api/use-settings";
 import { toastMutationError } from "@/lib/form-utils";
+import { useAuth, type MockUser } from "@/lib/mock-auth";
 import { useTheme, type ThemeMode } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { UserSettingsDto } from "@/services/settings/types";
+
+function splitName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: "User", lastName: "Account" };
+  if (parts.length === 1) return { firstName: parts[0]!, lastName: "" };
+  return { firstName: parts[0]!, lastName: parts.slice(1).join(" ") };
+}
+
+function buildFallbackSettings(user: MockUser | null): UserSettingsDto {
+  const { firstName, lastName } = splitName(user?.name ?? "WealthOS User");
+  return {
+    userId: user?.id ?? "local",
+    email: user?.email ?? "",
+    firstName,
+    lastName,
+    fullName: user?.name ?? `${firstName} ${lastName}`.trim(),
+    workspaceName: `${firstName}'s Workspace`,
+    avatarUrl: null,
+    timezone: "Asia/Kolkata",
+    country: "IN",
+    theme: "dark",
+    layoutDensity: "comfortable",
+    sidebarCollapsed: false,
+    currencyCode: "INR",
+    locale: "en-IN",
+    dateFormat: "DD/MM/YYYY",
+    numberFormat: "indian",
+    emailNotifications: true,
+    pushNotifications: false,
+    goalReminders: true,
+    loanEmiReminders: true,
+    investmentAlerts: true,
+    aiAdvisorInsights: true,
+    weeklySummary: true,
+    monthlyReport: true,
+    twoFactorEnabled: false,
+    angelOneConnected: false,
+    indiaBondsConnected: false,
+    bankSyncConnected: false,
+    upiConnected: false,
+    activeSessions: [
+      {
+        id: "current",
+        device: "This browser",
+        location: "Current session",
+        lastActiveAt: new Date().toISOString(),
+        isCurrent: true,
+      },
+    ],
+  };
+}
 
 function SectionCard({
   title,
@@ -115,7 +167,8 @@ function downloadBase64File(fileName: string, contentType: string, contentBase64
 }
 
 export function SettingsModule() {
-  const { data, isPending, isError, refetch, isFetching } = useSettings();
+  const { data, isPending, isError, error, refetch, isFetching } = useSettings();
+  const { user } = useAuth();
   const { setTheme } = useTheme();
 
   const updateProfile = useUpdateProfileSettings();
@@ -129,60 +182,74 @@ export function SettingsModule() {
   const deleteAccount = useDeleteAccount();
 
   const [draft, setDraft] = useState<UserSettingsDto | null>(null);
+  const [baseline, setBaseline] = useState<UserSettingsDto | null>(null);
+  const [usingFallback, setUsingFallback] = useState(false);
   const [password, setPassword] = useState({ current: "", next: "", confirm: "" });
   const [savingSection, setSavingSection] = useState<string | null>(null);
 
   useEffect(() => {
-    if (data) setDraft(structuredClone(data));
-  }, [data]);
+    if (data) {
+      const next = structuredClone(data);
+      setDraft(next);
+      setBaseline(structuredClone(data));
+      setUsingFallback(false);
+      return;
+    }
+
+    if (!isError) return;
+
+    setDraft((prev) => prev ?? buildFallbackSettings(user));
+    setBaseline((prev) => prev ?? buildFallbackSettings(user));
+    setUsingFallback(true);
+  }, [data, isError, user]);
 
   const dirtyProfile = useMemo(() => {
-    if (!data || !draft) return false;
+    if (!baseline || !draft) return false;
     return (
-      data.firstName !== draft.firstName ||
-      data.lastName !== draft.lastName ||
-      data.workspaceName !== draft.workspaceName ||
-      data.timezone !== draft.timezone ||
-      data.country !== draft.country
+      baseline.firstName !== draft.firstName ||
+      baseline.lastName !== draft.lastName ||
+      baseline.workspaceName !== draft.workspaceName ||
+      baseline.timezone !== draft.timezone ||
+      baseline.country !== draft.country
     );
-  }, [data, draft]);
+  }, [baseline, draft]);
 
   const dirtyAppearance = useMemo(() => {
-    if (!data || !draft) return false;
+    if (!baseline || !draft) return false;
     return (
-      data.theme !== draft.theme ||
-      data.layoutDensity !== draft.layoutDensity ||
-      data.sidebarCollapsed !== draft.sidebarCollapsed
+      baseline.theme !== draft.theme ||
+      baseline.layoutDensity !== draft.layoutDensity ||
+      baseline.sidebarCollapsed !== draft.sidebarCollapsed
     );
-  }, [data, draft]);
+  }, [baseline, draft]);
 
   const dirtyRegional = useMemo(() => {
-    if (!data || !draft) return false;
+    if (!baseline || !draft) return false;
     return (
-      data.currencyCode !== draft.currencyCode ||
-      data.locale !== draft.locale ||
-      data.dateFormat !== draft.dateFormat ||
-      data.numberFormat !== draft.numberFormat
+      baseline.currencyCode !== draft.currencyCode ||
+      baseline.locale !== draft.locale ||
+      baseline.dateFormat !== draft.dateFormat ||
+      baseline.numberFormat !== draft.numberFormat
     );
-  }, [data, draft]);
+  }, [baseline, draft]);
 
   const dirtyNotifications = useMemo(() => {
-    if (!data || !draft) return false;
+    if (!baseline || !draft) return false;
     return (
-      data.emailNotifications !== draft.emailNotifications ||
-      data.pushNotifications !== draft.pushNotifications ||
-      data.goalReminders !== draft.goalReminders ||
-      data.loanEmiReminders !== draft.loanEmiReminders ||
-      data.investmentAlerts !== draft.investmentAlerts ||
-      data.aiAdvisorInsights !== draft.aiAdvisorInsights ||
-      data.weeklySummary !== draft.weeklySummary ||
-      data.monthlyReport !== draft.monthlyReport
+      baseline.emailNotifications !== draft.emailNotifications ||
+      baseline.pushNotifications !== draft.pushNotifications ||
+      baseline.goalReminders !== draft.goalReminders ||
+      baseline.loanEmiReminders !== draft.loanEmiReminders ||
+      baseline.investmentAlerts !== draft.investmentAlerts ||
+      baseline.aiAdvisorInsights !== draft.aiAdvisorInsights ||
+      baseline.weeklySummary !== draft.weeklySummary ||
+      baseline.monthlyReport !== draft.monthlyReport
     );
-  }, [data, draft]);
+  }, [baseline, draft]);
 
-  if (isPending || !draft) {
+  if (isPending && !draft) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" aria-busy="true" aria-label="Loading settings">
         <PageHeader title="Settings" description="Preferences, currency and workspace options." />
         <TileSkeleton className="h-40" />
         <TileSkeleton className="h-52" />
@@ -191,15 +258,25 @@ export function SettingsModule() {
     );
   }
 
-  if (isError) {
+  if (!draft) {
     return (
       <div className="space-y-4">
         <PageHeader title="Settings" description="Preferences, currency and workspace options." />
-        <Card>
+        <Card className="border-border/60 bg-card/80">
           <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="text-sm font-medium">Unable to load settings</p>
+            <p className="max-w-sm text-xs text-muted-foreground">
+              {error instanceof Error ? error.message : "The settings API did not respond."}
+            </p>
             <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
-              Retry
+              {isFetching ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Retrying…
+                </>
+              ) : (
+                "Retry"
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -221,6 +298,8 @@ export function SettingsModule() {
         timezone: draft.timezone,
         country: draft.country,
       });
+      setBaseline((prev) => (prev ? { ...prev, ...draft } : structuredClone(draft)));
+      setUsingFallback(false);
       toast.success("Profile saved");
     } catch (error) {
       toastMutationError(error, "Could not save profile");
@@ -245,6 +324,9 @@ export function SettingsModule() {
         setTheme((next.theme as ThemeMode) || "dark");
         document.documentElement.dataset.density = next.layoutDensity;
       }
+      setDraft(structuredClone(next));
+      setBaseline(structuredClone(next));
+      setUsingFallback(false);
       toast.success(section === "appearance" ? "Appearance saved" : "Regional settings saved");
     } catch (error) {
       toastMutationError(error, "Could not save preferences");
@@ -266,6 +348,8 @@ export function SettingsModule() {
         weeklySummary: draft.weeklySummary,
         monthlyReport: draft.monthlyReport,
       });
+      setBaseline((prev) => (prev ? { ...prev, ...draft } : structuredClone(draft)));
+      setUsingFallback(false);
       toast.success("Notification preferences saved");
     } catch (error) {
       toastMutationError(error, "Could not save notifications");
@@ -342,6 +426,19 @@ export function SettingsModule() {
         title="Settings"
         description="Manage profile, appearance, regional formats, notifications and security."
       />
+
+      {usingFallback ? (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-amber-200/90">
+              Settings API is unavailable. Showing local defaults so you can keep editing.
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+              {isFetching ? "Retrying…" : "Retry sync"}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <SectionCard title="Profile & Workspace" description="Your identity and workspace defaults." icon={UserRound}>
         <div className="grid gap-4 sm:grid-cols-2">
