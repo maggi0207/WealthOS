@@ -55,8 +55,8 @@ services:
       AngelOne__EnableLiveSync: ${ANGELONE_ENABLE_LIVE_SYNC:-false}
       AngelOne__RefreshTokenSecretName: ${ANGELONE_REFRESH_TOKEN_SECRET_NAME:-}
     ports:
-      # Host 8080 is used by layaKPI on this VPS — publish WealthOS API on 8081.
-      - "${WEALTHOS_API_HOST_PORT:-8081}:8080"
+      # Host 8080 is used by layaKPI on this VPS — publish WealthOS API on 8081 (loopback only).
+      - "127.0.0.1:${WEALTHOS_API_HOST_PORT:-8081}:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health || exit 1"]
       interval: 15s
@@ -80,8 +80,8 @@ services:
       api:
         condition: service_healthy
     ports:
-      # TanStack Start node-server listens on 3000 inside the container
-      - "${WEALTHOS_FRONTEND_HOST_PORT:-3000}:3000"
+      # TanStack Start node-server listens on 3000; host Nginx proxies wealthos.* → 127.0.0.1:3000
+      - "127.0.0.1:${WEALTHOS_FRONTEND_HOST_PORT:-3000}:3000"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/ || exit 1"]
       interval: 15s

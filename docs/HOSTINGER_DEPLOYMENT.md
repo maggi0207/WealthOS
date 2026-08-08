@@ -162,6 +162,16 @@ ASP.NET still maps health at `/health` (no app code change). Host Nginx aliases 
 
 ## 9. Restart / update
 
+GitHub Actions (`.github/workflows/deploy-hostinger.yml`) mirrors layaKPI-Tracker:
+
+- Trigger: push to `main` or **Actions → Deploy to VPS → Run workflow**
+- Secrets (same as KPI): `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`
+- Remote path: `~/WealthOS`
+- Compose: `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build`
+- Smoke: `127.0.0.1:8081/health` and `127.0.0.1:3000/`
+
+Manual update (same commands as CI):
+
 ```bash
 cd ~/WealthOS
 git fetch --all
@@ -170,8 +180,6 @@ docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.producti
 docker image prune -f
 sudo nginx -t && sudo systemctl reload nginx
 ```
-
-GitHub Actions (`deploy-hostinger.yml`) runs the same compose path via SSH (`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`).
 
 ## 10. Rollback
 

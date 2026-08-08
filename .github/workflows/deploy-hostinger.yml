@@ -1,5 +1,6 @@
-# Matches maggi0207/layaKPI-Tracker Hostinger deploy pattern.
-# Reuse VPS_* secrets (or org secrets). Host Nginx owns 80/443.
+# Hostinger VPS deploy — same pattern as maggi0207/layaKPI-Tracker.
+# Reuse repo/org secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY
+# Host Nginx owns 80/443; Docker publishes only loopback 3000 (UI) + 8081 (API).
 name: Deploy to VPS
 
 on:
@@ -9,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-vps
+  group: deploy-wealthos-vps
   cancel-in-progress: false
 
 jobs:
@@ -24,17 +25,32 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          timeout: 60s
+          command_timeout: 30m
           script: |
-            set -e
+            set -euo pipefail
 
             cd ~/WealthOS
 
             git fetch --all
             git reset --hard origin/main
 
-            # Shared-VPS stack: frontend :3000, API :8081 (8080 = layaKPI), Postgres internal
-            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production down
-            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production build
-            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d
+            if [ ! -f docker/.env.production ]; then
+              echo "Missing docker/.env.production on the VPS — copy from docker/.env.production.example"
+              exit 1
+            fi
+
+            # Shared VPS: frontend :3000, API :8081 (KPI uses 3001 + 8080). Do not bind 80/443.
+            docker compose \
+              -f docker/docker-compose.prod.yml \
+              --env-file docker/.env.production \
+              up -d --build
 
             docker image prune -f
+
+            # Smoke checks (origin ports behind host Nginx)
+            curl -fsS --max-time 30 http://127.0.0.1:8081/health >/dev/null
+            curl -fsS --max-time 30 -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/ | grep -E '200|307'
+
+            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production ps
