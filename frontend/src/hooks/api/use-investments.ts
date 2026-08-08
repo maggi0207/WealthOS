@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useAuth } from "@/lib/mock-auth";
 import { investmentService } from "@/services/investments/investment-service";
 import type {
   AddManualHoldingRequestDto,
@@ -16,16 +17,21 @@ export const investmentKeys = {
 };
 
 export function useInvestmentsOverview() {
+  const { isReady, user } = useAuth();
   return useQuery({
     queryKey: investmentKeys.overview(),
     queryFn: () => investmentService.getOverview(),
+    enabled: isReady && Boolean(user),
+    retry: 1,
   });
 }
 
 export function useInvestmentProviders() {
+  const { isReady, user } = useAuth();
   return useQuery({
     queryKey: investmentKeys.providers(),
     queryFn: () => investmentService.getProviders(),
+    enabled: isReady && Boolean(user),
   });
 }
 

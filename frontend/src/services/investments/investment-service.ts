@@ -90,11 +90,15 @@ type HoldingListDto = { items: HoldingDto[] };
 
 type TxnDto = {
   id: string;
-  type: number | string;
+  type?: number | string;
+  transactionType?: number | string;
   title?: string | null;
   description?: string | null;
+  notes?: string | null;
+  holdingName?: string | null;
   amount: number;
-  tradeDate: string;
+  tradeDate?: string;
+  transactionDate?: string;
   accountName?: string | null;
 };
 
@@ -155,7 +159,8 @@ function relativeSync(iso?: string | null): string {
   return `Synced ${Math.round(mins / 1440)} days ago`;
 }
 
-function formatTxnDate(iso: string): string {
+function formatTxnDate(iso?: string | null): string {
+  if (!iso) return "—";
   const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -186,7 +191,7 @@ class InvestmentService extends BaseApiService {
   async getOverview(): Promise<InvestmentsOverview> {
     if (isMockApiMode()) return mapMock();
 
-    const [portfolio, accounts, holdings, txns, allocation] = await Promise.all([
+    const settled = await Promise.allSettled([
       this.get<PortfolioDto>("/investments/portfolio"),
       this.get<AccountListDto>("/investments/accounts?pageSize=50"),
       this.get<HoldingListDto>("/investments/holdings?pageSize=100"),
@@ -194,17 +199,29 @@ class InvestmentService extends BaseApiService {
       this.get<AllocationDto>("/investments/allocation"),
     ]);
 
+    const portfolio = settled[0].status === "fulfilled" ? settled[0].value : null;
+    const accounts = settled[1].status === "fulfilled" ? settled[1].value : null;
+    const holdings = settled[2].status === "fulfilled" ? settled[2].value : null;
+    const txns = settled[3].status === "fulfilled" ? settled[3].value : null;
+    const allocation = settled[4].status === "fulfilled" ? settled[4].value : null;
+
+    const failed = settled.filter((r) => r.status === "rejected");
+    if (failed.length === settled.length) {
+      const reason = failed[0]?.status === "rejected" ? failed[0].reason : null;
+      throw reason instanceof Error ? reason : new Error("Unable to load investments");
+    }
+
     return {
       portfolio: {
-        invested: n(portfolio.investedAmount),
-        current: n(portfolio.currentValue),
-        todayChange: n(portfolio.todaysGain),
-        todayChangePct: n(portfolio.todaysGainPercent),
-        xirr: n(portfolio.xirrPercent, 0),
-        overallReturn: n(portfolio.overallGain),
-        overallReturnPct: n(portfolio.absoluteReturnPercent),
+        invested: n(portfolio?.investedAmount),
+        current: n(portfolio?.currentValue),
+        todayChange: n(portfolio?.todaysGain),
+        todayChangePct: n(portfolio?.todaysGainPercent),
+        xirr: n(portfolio?.xirrPercent, 0),
+        overallReturn: n(portfolio?.overallGain),
+        overallReturnPct: n(portfolio?.absoluteReturnPercent),
       },
-      accounts: (accounts.items ?? []).map((a) => ({
+      accounts: (accounts?.items ?? []).map((a) => ({
         id: String(a.id),
         name: a.name,
         owner: a.ownerName || "—",
@@ -219,7 +236,7 @@ class InvestmentService extends BaseApiService {
         dayChangePct: n(a.dayChangePercent),
         holdings: n(a.holdingsCount ?? a.holdingCount),
       })),
-      holdings: (holdings.items ?? []).map((h) => ({
+      holdings: (holdings?.items ?? []).map((h) => ({
         id: String(h.id),
         name: h.name,
         ticker: h.symbol || "",
@@ -230,20 +247,20 @@ class InvestmentService extends BaseApiService {
         dayChange: n(h.dayChange),
         dayChangePct: n(h.dayChangePercent),
       })),
-      transactions: (txns.items ?? []).map((t) => ({
+      transactions: (txns?.items ?? []).map((t) => ({
         id: String(t.id),
-        kind: mapTxnKind(t.type),
-        title: t.title || t.description || "Transaction",
+        kind: mapTxnKind(t.transactionType ?? t.type ?? 0),
+        title: t.title || t.holdingName || t.notes || t.description || "Transaction",
         account: t.accountName || "—",
-        date: formatTxnDate(t.tradeDate),
+        date: formatTxnDate(t.transactionDate ?? t.tradeDate),
         amount: n(t.amount),
       })),
-      allocation: (allocation.slices ?? []).map((s, i) => ({
+      allocation: (allocation?.slices ?? []).map((s, i) => ({
         name: s.categoryName,
         value: n(s.value),
         color: COLORS[i % COLORS.length]!,
       })),
-      allocationTotal: n(allocation.totalValue),
+      allocationTotal: n(allocation?.totalValue),
     };
   }
 
