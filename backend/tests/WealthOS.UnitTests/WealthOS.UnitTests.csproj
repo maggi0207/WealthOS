@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\WealthOS.Application\WealthOS.Application.csproj" />
     <ProjectReference Include="..\..\src\WealthOS.Domain\WealthOS.Domain.csproj" />
+    <ProjectReference Include="..\..\src\WealthOS.Infrastructure\WealthOS.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

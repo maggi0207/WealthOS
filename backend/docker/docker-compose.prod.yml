@@ -50,6 +50,8 @@ services:
       AdminSeed__LastName: ${ADMIN_SEED_LAST_NAME:-Admin}
       AngelOne__ApiKey: ${ANGELONE_API_KEY:-}
       AngelOne__ClientCode: ${ANGELONE_CLIENT_CODE:-}
+      AngelOne__Password: ${ANGELONE_PASSWORD:-}
+      AngelOne__TotpSecret: ${ANGELONE_TOTP_SECRET:-}
       AngelOne__EnableLiveSync: ${ANGELONE_ENABLE_LIVE_SYNC:-false}
       AngelOne__RefreshTokenSecretName: ${ANGELONE_REFRESH_TOKEN_SECRET_NAME:-}
     ports:

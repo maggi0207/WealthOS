@@ -83,6 +83,17 @@ public sealed class InvestmentAccountRepository : Repository<InvestmentAccount>,
         Guid userId,
         CancellationToken cancellationToken = default) =>
         await DbSet.AnyAsync(x => x.Id == id && x.UserId == userId, cancellationToken);
+
+    public async Task<IReadOnlyList<InvestmentAccount>> ListConnectedByProviderKindAsync(
+        ProviderKind providerKind,
+        CancellationToken cancellationToken = default) =>
+        await DbSet
+            .Include(x => x.Provider)
+            .Where(x =>
+                x.Status == InvestmentAccountStatus.Connected
+                && x.Provider != null
+                && x.Provider.Kind == providerKind)
+            .ToListAsync(cancellationToken);
 }
 
 public sealed class HoldingRepository : Repository<Holding>, IHoldingRepository
@@ -142,6 +153,14 @@ public sealed class HoldingRepository : Repository<Holding>, IHoldingRepository
         await DbSet.AsNoTracking()
             .Include(x => x.Account)
             .Where(x => x.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Holding>> ListTrackedForAccountAsync(
+        Guid accountId,
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        await DbSet.IgnoreQueryFilters()
+            .Where(x => x.AccountId == accountId && x.UserId == userId)
             .ToListAsync(cancellationToken);
 
     public async Task<int> CountForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>

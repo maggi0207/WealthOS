@@ -58,7 +58,7 @@ Required values:
 | `JWT_ISSUER` | `https://api.wealthos.devenlight.com` |
 | `VITE_API_BASE_URL` | `https://api.wealthos.devenlight.com` |
 
-Optional: `ADMIN_SEED_*`, `ANGELONE_*`.
+Optional: `ADMIN_SEED_*`, `ANGELONE_*` (`API_KEY`, `CLIENT_CODE`, `PASSWORD`, `TOTP_SECRET`, `ENABLE_LIVE_SYNC`).
 
 ## 4. Start containers
 

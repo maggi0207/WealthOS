@@ -28,6 +28,10 @@ public interface IInvestmentAccountRepository : IRepository<InvestmentAccount>
     Task<int> CountForUserAsync(Guid userId, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsForUserAsync(Guid id, Guid userId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<InvestmentAccount>> ListConnectedByProviderKindAsync(
+        ProviderKind providerKind,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IHoldingRepository : IRepository<Holding>
@@ -44,6 +48,11 @@ public interface IHoldingRepository : IRepository<Holding>
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Holding>> ListAllForUserAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Holding>> ListTrackedForAccountAsync(
+        Guid accountId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
 
     Task<int> CountForUserAsync(Guid userId, CancellationToken cancellationToken = default);
 }
