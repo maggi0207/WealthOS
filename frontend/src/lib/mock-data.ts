@@ -26,7 +26,7 @@ export const moduleStatus: Record<string, { records: number; lastSync: string }>
   "/documents": { records: 63, lastSync: "last week" },
   "/reports": { records: 9, lastSync: "last week" },
   "/ai-advisor": { records: 0, lastSync: "—" },
-  "/settings": { records: 0, lastSync: "—" },
+  "/settings": { records: 1, lastSync: "live" },
   "/dashboard": { records: 0, lastSync: "just now" },
 };
 

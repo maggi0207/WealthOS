@@ -13,6 +13,7 @@ using WealthOS.Domain.Loans.Entities;
 using WealthOS.Domain.Notifications.Entities;
 using WealthOS.Domain.Properties.Entities;
 using WealthOS.Domain.Reports.Entities;
+using WealthOS.Domain.Settings.Entities;
 
 namespace WealthOS.Infrastructure.Persistence;
 
@@ -166,6 +167,8 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, Guid>
     public DbSet<ReportExport> ReportExports => Set<ReportExport>();
 
     public DbSet<ManualAsset> ManualAssets => Set<ManualAsset>();
+
+    public DbSet<UserSettings> UserSettings => Set<UserSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

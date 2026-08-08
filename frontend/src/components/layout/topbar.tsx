@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/mock-auth";
 import { findNavItem } from "@/lib/navigation";
 
 export function Topbar() {
-  const { theme, toggle } = useTheme();
+  const { resolved, toggle } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -50,7 +50,7 @@ export function Topbar() {
         </div>
 
         <Button variant="ghost" size="icon" aria-label="Toggle theme" className="size-11 md:size-9" onClick={toggle}>
-          {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          {resolved === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
         </Button>
 
         <DropdownMenu>

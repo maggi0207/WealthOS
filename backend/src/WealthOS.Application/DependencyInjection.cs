@@ -12,6 +12,7 @@ using WealthOS.Application.Loans;
 using WealthOS.Application.Notifications;
 using WealthOS.Application.Properties;
 using WealthOS.Application.Reports;
+using WealthOS.Application.Settings;
 
 namespace WealthOS.Application;
 
@@ -34,6 +35,7 @@ public static class DependencyInjection
         services.AddNotificationsApplication();
         services.AddAIApplication();
         services.AddReportsApplication();
+        services.AddSettingsApplication();
 
         return services;
     }

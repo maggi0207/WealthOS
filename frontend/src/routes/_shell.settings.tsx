@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Settings } from "lucide-react";
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import { SettingsModule } from "@/components/settings/settings-module";
 
 export const Route = createFileRoute("/_shell/settings")({
   head: () => ({
@@ -16,13 +15,5 @@ export const Route = createFileRoute("/_shell/settings")({
 });
 
 function SettingsPage() {
-  return (
-    <ModulePlaceholder
-      title="Settings"
-      description="Preferences, currency and workspace options."
-      icon={Settings}
-      path="/settings"
-      planned={["Profile and workspace preferences", "Currency, locale and number formats", "Theme and layout density", "Data import and export"]}
-    />
-  );
+  return <SettingsModule />;
 }
