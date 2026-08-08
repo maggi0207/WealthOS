@@ -59,7 +59,8 @@ public sealed class PortfolioService : IPortfolioService
             holdings.Sum(h => h.CurrentValue),
             holdings.Sum(h => h.DayChange),
             accountCount,
-            holdings.Count);
+            holdings.Count,
+            xirrPlaceholder: null);
 
         return Result.Success(new PortfolioResponse
         {
@@ -153,7 +154,6 @@ public sealed class PortfolioService : IPortfolioService
         IReadOnlyList<Domain.Investments.Entities.PortfolioSnapshot> snapshots,
         decimal currentValue)
     {
-        // Prefer seeded / stored snapshots when available; otherwise fall back to frontend-aligned stubs.
         if (snapshots.Count >= 2)
         {
             var ordered = snapshots.OrderBy(s => s.SnapshotDate).ToList();
@@ -175,51 +175,17 @@ public sealed class PortfolioService : IPortfolioService
                 .ToList();
         }
 
-        return GetStubSeries(range, currentValue);
-    }
-
-    private static IReadOnlyList<PerformancePoint> GetStubSeries(PerformanceRange range, decimal currentValue)
-    {
-        var nowLakhs = Math.Round(currentValue / 100_000m, 1, MidpointRounding.AwayFromZero);
-        return range switch
+        // No fabricated history — only show current portfolio value when real snapshots are absent.
+        if (currentValue <= 0m)
         {
-            PerformanceRange.OneMonth =>
-            [
-                new PerformancePoint { Label = "W1", Value = nowLakhs - 4.0m },
-                new PerformancePoint { Label = "W2", Value = nowLakhs - 3.1m },
-                new PerformancePoint { Label = "W3", Value = nowLakhs - 1.4m },
-                new PerformancePoint { Label = "W4", Value = nowLakhs - 0.8m },
-                new PerformancePoint { Label = "Now", Value = nowLakhs },
-            ],
-            PerformanceRange.SixMonths =>
-            [
-                new PerformancePoint { Label = "Dec", Value = nowLakhs - 18.8m },
-                new PerformancePoint { Label = "Jan", Value = nowLakhs - 15.3m },
-                new PerformancePoint { Label = "Feb", Value = nowLakhs - 13.0m },
-                new PerformancePoint { Label = "Mar", Value = nowLakhs - 8.6m },
-                new PerformancePoint { Label = "Apr", Value = nowLakhs - 4.5m },
-                new PerformancePoint { Label = "May", Value = nowLakhs },
-            ],
-            PerformanceRange.OneYear =>
-            [
-                new PerformancePoint { Label = "Jun", Value = nowLakhs - 34.8m },
-                new PerformancePoint { Label = "Aug", Value = nowLakhs - 29.1m },
-                new PerformancePoint { Label = "Oct", Value = nowLakhs - 24.6m },
-                new PerformancePoint { Label = "Dec", Value = nowLakhs - 18.8m },
-                new PerformancePoint { Label = "Feb", Value = nowLakhs - 13.0m },
-                new PerformancePoint { Label = "Apr", Value = nowLakhs - 4.5m },
-                new PerformancePoint { Label = "Jun", Value = nowLakhs },
-            ],
-            _ =>
-            [
-                new PerformancePoint { Label = "2021", Value = 42.0m },
-                new PerformancePoint { Label = "2022", Value = 61.5m },
-                new PerformancePoint { Label = "2023", Value = 84.2m },
-                new PerformancePoint { Label = "2024", Value = 108.9m },
-                new PerformancePoint { Label = "2025", Value = 131.4m },
-                new PerformancePoint { Label = "2026", Value = nowLakhs },
-            ],
-        };
+            return Array.Empty<PerformancePoint>();
+        }
+
+        var nowLakhs = Math.Round(currentValue / 100_000m, 1, MidpointRounding.AwayFromZero);
+        return
+        [
+            new PerformancePoint { Label = "Now", Value = nowLakhs },
+        ];
     }
 
     private Result<Guid> RequireUserId()

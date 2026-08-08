@@ -15,7 +15,7 @@ public interface IInvestmentCalculationService
         int accountCount,
         int holdingCount,
         string currencyCode = "INR",
-        decimal? xirrPlaceholder = 14.6m);
+        decimal? xirrPlaceholder = null);
 
     PortfolioSummary BuildSummary(
         decimal investedAmount,
@@ -26,7 +26,7 @@ public interface IInvestmentCalculationService
         string? largestHoldingName,
         decimal? largestHoldingValue,
         string currencyCode = "INR",
-        decimal xirrPlaceholder = 14.6m);
+        decimal xirrPlaceholder = 0m);
 
     AssetAllocation BuildAllocation(
         IEnumerable<(InvestmentCategory Category, decimal Value)> holdings,
@@ -39,10 +39,8 @@ public interface IInvestmentCalculationService
         decimal currentValue,
         string currencyCode = "INR");
 
-    /// <summary>
-    /// Placeholder XIRR — returns the supplied stub value without computing IRR.
-    /// </summary>
-    decimal? CalculateXirrPlaceholder(decimal? stubPercent = 14.6m);
+    /// <summary>XIRR placeholder — not calculated in Phase 7.</summary>
+    decimal? CalculateXirrPlaceholder(decimal? stubPercent = null);
 
     decimal RoundMoney(decimal value);
 
@@ -61,7 +59,7 @@ public sealed class InvestmentCalculationService : IInvestmentCalculationService
         int accountCount,
         int holdingCount,
         string currencyCode = "INR",
-        decimal? xirrPlaceholder = 14.6m)
+        decimal? xirrPlaceholder = null)
     {
         var overallGain = RoundMoney(currentValue - investedAmount);
         var absoluteReturn = investedAmount == 0m
@@ -100,7 +98,7 @@ public sealed class InvestmentCalculationService : IInvestmentCalculationService
         string? largestHoldingName,
         decimal? largestHoldingValue,
         string currencyCode = "INR",
-        decimal xirrPlaceholder = 14.6m)
+        decimal xirrPlaceholder = 0m)
     {
         var portfolio = BuildPortfolio(
             investedAmount,
@@ -109,7 +107,7 @@ public sealed class InvestmentCalculationService : IInvestmentCalculationService
             accountCount,
             holdingCount,
             currencyCode,
-            xirrPlaceholder);
+            xirrPlaceholder > 0m ? xirrPlaceholder : null);
 
         return new PortfolioSummary
         {
@@ -119,7 +117,7 @@ public sealed class InvestmentCalculationService : IInvestmentCalculationService
             TodaysGainPercent = portfolio.TodaysGainPercent,
             TotalReturn = portfolio.OverallGain,
             AbsoluteReturnPercent = portfolio.AbsoluteReturnPercent,
-            XirrPlaceholderPercent = xirrPlaceholder,
+            XirrPlaceholderPercent = portfolio.XirrPercent ?? 0m,
             AccountCount = accountCount,
             HoldingCount = holdingCount,
             LargestHoldingName = largestHoldingName,
@@ -178,7 +176,7 @@ public sealed class InvestmentCalculationService : IInvestmentCalculationService
         };
     }
 
-    public decimal? CalculateXirrPlaceholder(decimal? stubPercent = 14.6m) => stubPercent;
+    public decimal? CalculateXirrPlaceholder(decimal? stubPercent = null) => stubPercent;
 
     public decimal RoundMoney(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 

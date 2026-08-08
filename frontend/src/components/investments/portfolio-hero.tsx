@@ -62,8 +62,16 @@ export function PortfolioHero() {
           sub={fmtPctSigned(p.overallReturnPct)}
           tone="positive"
         />
-        <Cell label="XIRR" value={`${p.xirr}%`} sub="Placeholder" />
-        <Cell label="Accounts" value={String(data.accounts.length)} sub="connected + manual" />
+        <Cell
+          label="XIRR"
+          value={p.xirr > 0 ? `${p.xirr}%` : "—"}
+          sub={p.xirr > 0 ? undefined : "Not calculated yet"}
+        />
+        <Cell
+          label="Accounts"
+          value={String(data.accounts.length)}
+          sub={data.accounts.length === 0 ? "Add or connect an account" : "connected + manual"}
+        />
       </dl>
     </section>
   );

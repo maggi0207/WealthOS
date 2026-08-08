@@ -14,6 +14,7 @@ export const investmentKeys = {
   all: ["investments"] as const,
   overview: () => [...investmentKeys.all, "overview"] as const,
   providers: () => [...investmentKeys.all, "providers"] as const,
+  performance: (range: string) => [...investmentKeys.all, "performance", range] as const,
 };
 
 export function useInvestmentsOverview() {
@@ -31,6 +32,15 @@ export function useInvestmentProviders() {
   return useQuery({
     queryKey: investmentKeys.providers(),
     queryFn: () => investmentService.getProviders(),
+    enabled: isReady && Boolean(user),
+  });
+}
+
+export function useInvestmentPerformance(range: string) {
+  const { isReady, user } = useAuth();
+  return useQuery({
+    queryKey: investmentKeys.performance(range),
+    queryFn: () => investmentService.getPerformance(range),
     enabled: isReady && Boolean(user),
   });
 }

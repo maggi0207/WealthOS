@@ -1,47 +1,11 @@
-import { ArrowRight, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-
-import { investmentInsights, type InvestmentInsight } from "@/lib/investments-data";
-import { cn } from "@/lib/utils";
-
-const toneStyle: Record<InvestmentInsight["tone"], string> = {
-  positive: "bg-success/12 text-success",
-  caution: "bg-amber-500/12 text-amber-500",
-  neutral: "bg-primary/12 text-primary",
-};
-
-/** AI insight rail with mock quick actions. */
+/** AI insights — empty until the advisor produces real investment recommendations. */
 export function InvestmentInsights() {
   return (
-    <div className="no-scrollbar bleed-gutter page-gutter flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 xl:grid-cols-3">
-      {investmentInsights.map((insight) => (
-        <article
-          key={insight.id}
-          className="surface-tile flex w-[80vw] max-w-[320px] shrink-0 snap-start flex-col p-4 sm:w-auto sm:max-w-none"
-        >
-          <div className="flex items-center gap-2">
-            <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Sparkles className="size-3.5" />
-            </span>
-            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold", toneStyle[insight.tone])}>
-              {insight.tag}
-            </span>
-          </div>
-          <h3 className="mt-2.5 text-[14px] font-semibold leading-snug">{insight.title}</h3>
-          <p className="mt-1 flex-1 text-[12px] leading-relaxed text-muted-foreground">{insight.body}</p>
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/60 pt-3">
-            <span className="truncate text-[11px] font-semibold text-success tabular-nums">{insight.impact}</span>
-            <button
-              type="button"
-              onClick={() => toast.success(`${insight.action} — mock action queued`)}
-              className="press inline-flex min-h-11 shrink-0 items-center gap-1 text-[12px] font-semibold text-primary"
-            >
-              {insight.action}
-              <ArrowRight className="size-3.5" />
-            </button>
-          </div>
-        </article>
-      ))}
+    <div className="surface-tile px-4 py-8 text-center">
+      <p className="text-sm font-medium">No investment insights yet</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Insights will appear here after you add holdings or connect Angel One.
+      </p>
     </div>
   );
 }

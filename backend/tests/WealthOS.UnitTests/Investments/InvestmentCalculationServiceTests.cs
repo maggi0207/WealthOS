@@ -21,7 +21,7 @@ public sealed class InvestmentCalculationServiceTests
         portfolio.OverallGain.Should().Be(21_20_000m);
         portfolio.AbsoluteReturnPercent.Should().Be(16.83m);
         portfolio.TodaysGain.Should().Be(62_400m);
-        portfolio.XirrPercent.Should().Be(14.6m);
+        portfolio.XirrPercent.Should().BeNull();
         portfolio.AccountCount.Should().Be(4);
         portfolio.HoldingCount.Should().Be(13);
     }
@@ -51,9 +51,10 @@ public sealed class InvestmentCalculationServiceTests
     }
 
     [Fact]
-    public void CalculateXirrPlaceholder_ShouldReturnStub()
+    public void CalculateXirrPlaceholder_ShouldReturnNullUnlessProvided()
     {
-        _sut.CalculateXirrPlaceholder().Should().Be(14.6m);
+        _sut.CalculateXirrPlaceholder().Should().BeNull();
         _sut.CalculateXirrPlaceholder(null).Should().BeNull();
+        _sut.CalculateXirrPlaceholder(12.5m).Should().Be(12.5m);
     }
 }

@@ -275,10 +275,37 @@ class InvestmentService extends BaseApiService {
             isEnabled: true,
             supportsSync: false,
           },
+          {
+            id: "a1111111-1111-2222-3333-444444444402",
+            kind: 1,
+            name: "Angel One",
+            isEnabled: true,
+            supportsSync: true,
+          },
         ],
       };
     }
     return this.get<InvestmentProviderListDto>("/investments/providers");
+  }
+
+  async getPerformance(range: string): Promise<{
+    points: Array<{ label: string; value: number }>;
+    absoluteReturnPercent: number;
+  }> {
+    if (isMockApiMode()) {
+      return { points: [], absoluteReturnPercent: 0 };
+    }
+    const dto = await this.get<{
+      points?: Array<{ label: string; value: number }>;
+      absoluteReturnPercent?: number;
+    }>(`/investments/performance?range=${encodeURIComponent(range)}`);
+    return {
+      points: (dto.points ?? []).map((p) => ({
+        label: p.label,
+        value: n(p.value),
+      })),
+      absoluteReturnPercent: n(dto.absoluteReturnPercent),
+    };
   }
 
   async createAccount(body: CreateInvestmentAccountRequestDto): Promise<InvestmentAccountDto> {
