@@ -54,7 +54,11 @@ public sealed class UserSettingsService : IUserSettingsService
             return Result.Failure<UserSettingsResponse>(context.Error!);
         }
 
-        return Result.Success(Map(context.Value.User, context.Value.Settings));
+        var tokens = await _refreshTokenRepository.GetActiveTokensByUserIdAsync(
+            context.Value.User.Id,
+            cancellationToken);
+
+        return Result.Success(Map(context.Value.User, context.Value.Settings, tokens));
     }
 
     public async Task<Result<UserSettingsResponse>> UpdateAsync(
@@ -153,7 +157,7 @@ public sealed class UserSettingsService : IUserSettingsService
         _settingsRepository.Update(settings);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success(Map(user, settings));
+        return await GetAsync(cancellationToken);
     }
 
     public async Task<Result<UserSettingsResponse>> UpdatePreferencesAsync(
@@ -197,7 +201,7 @@ public sealed class UserSettingsService : IUserSettingsService
         _settingsRepository.Update(settings);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(Map(context.Value.User, settings));
+        return await GetAsync(cancellationToken);
     }
 
     public async Task<Result<UserSettingsResponse>> UpdateNotificationsAsync(
@@ -222,7 +226,7 @@ public sealed class UserSettingsService : IUserSettingsService
         _settingsRepository.Update(settings);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(Map(context.Value.User, settings));
+        return await GetAsync(cancellationToken);
     }
 
     public async Task<Result<UserSettingsResponse>> UpdateSecurityAsync(
@@ -286,7 +290,7 @@ public sealed class UserSettingsService : IUserSettingsService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success(Map(user, settings));
+        return await GetAsync(cancellationToken);
     }
 
     public async Task<Result<SettingsExportResponse>> ExportAsync(
@@ -305,9 +309,6 @@ public sealed class UserSettingsService : IUserSettingsService
             exportedAt = DateTime.UtcNow,
             scope,
             settings = settingsResult.Value,
-            note = scope == "all"
-                ? "Full settings export. Module datasets can be exported from their respective screens."
-                : $"Scoped export placeholder for '{scope}'. Settings snapshot included.",
         };
 
         var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
@@ -436,10 +437,13 @@ public sealed class UserSettingsService : IUserSettingsService
         var settings = await _settingsRepository.GetByUserIdAsync(userId, cancellationToken);
         if (settings is null)
         {
+            var workspace = string.IsNullOrWhiteSpace(user.DisplayName)
+                ? $"{user.FirstName} {user.LastName}".Trim()
+                : user.DisplayName!;
             settings = new UserSettings(Guid.NewGuid())
             {
                 UserId = userId,
-                WorkspaceName = $"{user.FirstName}'s Workspace".Trim(),
+                WorkspaceName = string.IsNullOrWhiteSpace(workspace) ? string.Empty : workspace,
             };
             await _settingsRepository.AddAsync(settings, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -448,8 +452,29 @@ public sealed class UserSettingsService : IUserSettingsService
         return Result.Success((user, settings));
     }
 
-    private static UserSettingsResponse Map(User user, UserSettings settings) =>
-        new()
+    private static UserSettingsResponse Map(
+        User user,
+        UserSettings settings,
+        IReadOnlyList<RefreshToken>? activeTokens = null)
+    {
+        var sessions = (activeTokens ?? Array.Empty<RefreshToken>())
+            .OrderByDescending(token => token.CreatedAt)
+            .Select(token => new ActiveSessionResponse
+            {
+                Id = token.Id.ToString(),
+                Device = string.IsNullOrWhiteSpace(token.CreatedByIp) ? "Unknown device" : $"IP {token.CreatedByIp}",
+                Location = token.CreatedByIp,
+                LastActiveAt = token.CreatedAt,
+                IsCurrent = false,
+            })
+            .ToList();
+
+        if (sessions.Count > 0)
+        {
+            sessions[0].IsCurrent = true;
+        }
+
+        return new UserSettingsResponse
         {
             UserId = user.Id,
             Email = user.Email ?? string.Empty,
@@ -482,18 +507,9 @@ public sealed class UserSettingsService : IUserSettingsService
             IndiaBondsConnected = settings.IndiaBondsConnected,
             BankSyncConnected = settings.BankSyncConnected,
             UpiConnected = settings.UpiConnected,
-            ActiveSessions =
-            [
-                new ActiveSessionResponse
-                {
-                    Id = "current",
-                    Device = "This browser",
-                    Location = "Current session",
-                    LastActiveAt = DateTime.UtcNow,
-                    IsCurrent = true,
-                },
-            ],
+            ActiveSessions = sessions,
         };
+    }
 
     private static string Normalize(string? value, string fallback) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();

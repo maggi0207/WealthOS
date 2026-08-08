@@ -32,61 +32,9 @@ import {
   useUpdateSecuritySettings,
 } from "@/hooks/api/use-settings";
 import { toastMutationError } from "@/lib/form-utils";
-import { useAuth, type MockUser } from "@/lib/mock-auth";
 import { useTheme, type ThemeMode } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { UserSettingsDto } from "@/services/settings/types";
-
-function splitName(fullName: string): { firstName: string; lastName: string } {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return { firstName: "User", lastName: "Account" };
-  if (parts.length === 1) return { firstName: parts[0]!, lastName: "" };
-  return { firstName: parts[0]!, lastName: parts.slice(1).join(" ") };
-}
-
-function buildFallbackSettings(user: MockUser | null): UserSettingsDto {
-  const { firstName, lastName } = splitName(user?.name ?? "WealthOS User");
-  return {
-    userId: user?.id ?? "local",
-    email: user?.email ?? "",
-    firstName,
-    lastName,
-    fullName: user?.name ?? `${firstName} ${lastName}`.trim(),
-    workspaceName: `${firstName}'s Workspace`,
-    avatarUrl: null,
-    timezone: "Asia/Kolkata",
-    country: "IN",
-    theme: "dark",
-    layoutDensity: "comfortable",
-    sidebarCollapsed: false,
-    currencyCode: "INR",
-    locale: "en-IN",
-    dateFormat: "DD/MM/YYYY",
-    numberFormat: "indian",
-    emailNotifications: true,
-    pushNotifications: false,
-    goalReminders: true,
-    loanEmiReminders: true,
-    investmentAlerts: true,
-    aiAdvisorInsights: true,
-    weeklySummary: true,
-    monthlyReport: true,
-    twoFactorEnabled: false,
-    angelOneConnected: false,
-    indiaBondsConnected: false,
-    bankSyncConnected: false,
-    upiConnected: false,
-    activeSessions: [
-      {
-        id: "current",
-        device: "This browser",
-        location: "Current session",
-        lastActiveAt: new Date().toISOString(),
-        isCurrent: true,
-      },
-    ],
-  };
-}
 
 function SectionCard({
   title,
@@ -168,7 +116,6 @@ function downloadBase64File(fileName: string, contentType: string, contentBase64
 
 export function SettingsModule() {
   const { data, isPending, isError, error, refetch, isFetching } = useSettings();
-  const { user } = useAuth();
   const { setTheme } = useTheme();
 
   const updateProfile = useUpdateProfileSettings();
@@ -183,25 +130,14 @@ export function SettingsModule() {
 
   const [draft, setDraft] = useState<UserSettingsDto | null>(null);
   const [baseline, setBaseline] = useState<UserSettingsDto | null>(null);
-  const [usingFallback, setUsingFallback] = useState(false);
   const [password, setPassword] = useState({ current: "", next: "", confirm: "" });
   const [savingSection, setSavingSection] = useState<string | null>(null);
 
   useEffect(() => {
-    if (data) {
-      const next = structuredClone(data);
-      setDraft(next);
-      setBaseline(structuredClone(data));
-      setUsingFallback(false);
-      return;
-    }
-
-    if (!isError) return;
-
-    setDraft((prev) => prev ?? buildFallbackSettings(user));
-    setBaseline((prev) => prev ?? buildFallbackSettings(user));
-    setUsingFallback(true);
-  }, [data, isError, user]);
+    if (!data) return;
+    setDraft(structuredClone(data));
+    setBaseline(structuredClone(data));
+  }, [data]);
 
   const dirtyProfile = useMemo(() => {
     if (!baseline || !draft) return false;
@@ -258,7 +194,7 @@ export function SettingsModule() {
     );
   }
 
-  if (!draft) {
+  if (isError || !draft) {
     return (
       <div className="space-y-4">
         <PageHeader title="Settings" description="Preferences, currency and workspace options." />
@@ -266,7 +202,7 @@ export function SettingsModule() {
           <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="text-sm font-medium">Unable to load settings</p>
             <p className="max-w-sm text-xs text-muted-foreground">
-              {error instanceof Error ? error.message : "The settings API did not respond."}
+              {error instanceof Error ? error.message : "Settings could not be loaded from the server."}
             </p>
             <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
               {isFetching ? (
@@ -299,7 +235,6 @@ export function SettingsModule() {
         country: draft.country,
       });
       setBaseline((prev) => (prev ? { ...prev, ...draft } : structuredClone(draft)));
-      setUsingFallback(false);
       toast.success("Profile saved");
     } catch (error) {
       toastMutationError(error, "Could not save profile");
@@ -326,7 +261,6 @@ export function SettingsModule() {
       }
       setDraft(structuredClone(next));
       setBaseline(structuredClone(next));
-      setUsingFallback(false);
       toast.success(section === "appearance" ? "Appearance saved" : "Regional settings saved");
     } catch (error) {
       toastMutationError(error, "Could not save preferences");
@@ -349,7 +283,6 @@ export function SettingsModule() {
         monthlyReport: draft.monthlyReport,
       });
       setBaseline((prev) => (prev ? { ...prev, ...draft } : structuredClone(draft)));
-      setUsingFallback(false);
       toast.success("Notification preferences saved");
     } catch (error) {
       toastMutationError(error, "Could not save notifications");
@@ -427,19 +360,6 @@ export function SettingsModule() {
         description="Manage profile, appearance, regional formats, notifications and security."
       />
 
-      {usingFallback ? (
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-amber-200/90">
-              Settings API is unavailable. Showing local defaults so you can keep editing.
-            </p>
-            <Button type="button" size="sm" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
-              {isFetching ? "Retrying…" : "Retry sync"}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
       <SectionCard title="Profile & Workspace" description="Your identity and workspace defaults." icon={UserRound}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Full name (first)" htmlFor="firstName">
@@ -476,7 +396,13 @@ export function SettingsModule() {
           </Field>
         </div>
         <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-          Avatar upload placeholder — drag & drop coming soon.
+          {draft.avatarUrl ? (
+            <a href={draft.avatarUrl} className="text-primary underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+              View current avatar
+            </a>
+          ) : (
+            "No avatar uploaded yet."
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" disabled={!dirtyProfile || savingSection === "profile"} onClick={() => void saveProfile()}>
@@ -487,7 +413,7 @@ export function SettingsModule() {
             type="button"
             variant="outline"
             disabled={!dirtyProfile}
-            onClick={() => data && setDraft(structuredClone(data))}
+            onClick={() => baseline && setDraft(structuredClone(baseline))}
           >
             Cancel
           </Button>
@@ -656,7 +582,7 @@ export function SettingsModule() {
       <SectionCard title="Data import & export" description="Move data in and out of WealthOS." icon={Upload}>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="cursor-pointer rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground hover:bg-muted/30">
-            CSV upload placeholder
+            Upload CSV or JSON settings file
             <input
               type="file"
               accept=".csv,.json"
@@ -665,7 +591,7 @@ export function SettingsModule() {
             />
           </label>
           <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-            Excel upload placeholder — future integration
+            Excel import is not enabled yet
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -726,15 +652,19 @@ export function SettingsModule() {
         </div>
         <div className="space-y-2">
           <p className="text-sm font-medium">Active sessions</p>
-          {draft.activeSessions.map((session) => (
-            <div key={session.id} className="rounded-xl border border-border/50 px-3 py-2 text-sm">
-              <p className="font-medium">{session.device}</p>
-              <p className="text-xs text-muted-foreground">
-                {session.location} · {new Date(session.lastActiveAt).toLocaleString()}
-                {session.isCurrent ? " · Current" : ""}
-              </p>
-            </div>
-          ))}
+          {draft.activeSessions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No active sessions found.</p>
+          ) : (
+            draft.activeSessions.map((session) => (
+              <div key={session.id} className="rounded-xl border border-border/50 px-3 py-2 text-sm">
+                <p className="font-medium">{session.device}</p>
+                <p className="text-xs text-muted-foreground">
+                  {session.location} · {new Date(session.lastActiveAt).toLocaleString()}
+                  {session.isCurrent ? " · Current" : ""}
+                </p>
+              </div>
+            ))
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" disabled={savingSection === "security"} onClick={() => void saveSecurity()}>
