@@ -1,9 +1,5 @@
-# Hostinger VPS deploy — same pattern as maggi0207/layaKPI-Tracker.
-# Secrets required:
-#   VPS_HOST, VPS_USER
-#   VPS_SSH_KEY_B64  = base64 of the PRIVATE key file (recommended)
-#   OR VPS_SSH_KEY   = raw PRIVATE key (must start with -----BEGIN ...)
-# Host Nginx owns 80/443; Docker publishes only loopback 3000 (UI) + 8081 (API).
+# Same Hostinger SSH deploy pattern as maggi0207/layaKPI-Tracker.
+# Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY (same values as KPI Tracker).
 name: Deploy to VPS
 
 on:
@@ -22,98 +18,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Prepare SSH private key
-        shell: bash
-        env:
-          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          KEY_FILE=~/.ssh/wealthos_deploy
-
-          write_key() {
-            local raw="$1"
-            # If it already looks like a PEM/OpenSSH private key, use as-is.
-            if printf '%s' "$raw" | grep -q 'BEGIN .*PRIVATE KEY'; then
-              printf '%s\n' "$raw" > "$KEY_FILE"
-              return
-            fi
-            # If someone pasted public key text, fail clearly.
-            if printf '%s' "$raw" | grep -qE '^[[:space:]]*ssh-(ed25519|rsa|dss) '; then
-              echo "ERROR: You pasted a PUBLIC key (ssh-ed25519 / ssh-rsa)."
-              echo "GitHub needs the PRIVATE key, preferably as base64 secret VPS_SSH_KEY_B64."
-              exit 1
-            fi
-            # Otherwise treat as base64 of the private key file.
-            if ! printf '%s' "$raw" | base64 -d > "$KEY_FILE" 2>/dev/null; then
-              echo "ERROR: Could not decode secret as base64 private key."
-              exit 1
-            fi
-          }
-
-          if [ -n "${VPS_SSH_KEY_B64:-}" ]; then
-            write_key "$VPS_SSH_KEY_B64"
-          elif [ -n "${VPS_SSH_KEY:-}" ]; then
-            write_key "$VPS_SSH_KEY"
-          else
-            echo "Missing secret: create VPS_SSH_KEY_B64 (recommended) or VPS_SSH_KEY"
-            exit 1
-          fi
-
-          # Normalize Windows CRLF if present
-          sed -i 's/\r$//' "$KEY_FILE"
-          chmod 600 "$KEY_FILE"
-
-          if ! grep -q 'BEGIN .*PRIVATE KEY' "$KEY_FILE"; then
-            echo "ERROR: After decoding, file is still not a private key."
-            echo "On Windows PowerShell run:"
-            echo '  [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\.ssh\gh_actions"))'
-            echo "Put that ONE line into GitHub secret name: VPS_SSH_KEY_B64"
-            echo "First decoded bytes:"
-            head -c 80 "$KEY_FILE" | od -An -tx1 | head -2
-            exit 1
-          fi
-
-          ssh-keygen -y -f "$KEY_FILE" >/dev/null
-
-          cp "$KEY_FILE" "$GITHUB_WORKSPACE/wealthos_deploy"
-          chmod 600 "$GITHUB_WORKSPACE/wealthos_deploy"
-          echo "SSH private key OK"
-
       - name: Deploy application using SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key_path: wealthos_deploy
-          port: 22
-          timeout: 60s
-          command_timeout: 30m
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            set -euo pipefail
-
+            set -e
             cd ~/WealthOS
 
             git fetch --all
             git reset --hard origin/main
 
-            if [ ! -f docker/.env.production ]; then
-              echo "Missing docker/.env.production on the VPS — copy from docker/.env.production.example"
-              exit 1
-            fi
-
-            # Shared VPS: frontend :3000, API :8081 (KPI uses 3001 + 8080). Do not bind 80/443.
             docker compose \
               -f docker/docker-compose.prod.yml \
               --env-file docker/.env.production \
               up -d --build
 
             docker image prune -f
-
-            # Smoke checks (origin ports behind host Nginx)
-            curl -fsS --max-time 30 http://127.0.0.1:8081/health >/dev/null
-            curl -fsS --max-time 30 -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/ | grep -E '200|307'
-
-            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production ps
