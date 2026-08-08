@@ -60,17 +60,22 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        # Match frontend Dockerfile: Windows-generated lockfiles can omit
-        # platform optional deps that Linux npm ci requires (emnapi, etc.).
-        run: npm install --no-audit --no-fund
+        # Windows-generated lockfiles omit Linux optional native binaries.
+        # Mirror frontend/Dockerfile so lightningcss / oxide resolve on ubuntu-latest.
+        run: |
+          npm install --no-audit --no-fund --include=optional
+          npm install --no-save --no-audit --no-fund \
+            lightningcss-linux-x64-gnu@1.33.0 \
+            @tailwindcss/oxide-linux-x64-gnu@4.3.3
 
       - name: Build (production API mode)
         env:
           VITE_API_MODE: api
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_API_VERSION: "1"
+          NITRO_PRESET: node-server
         run: |
-          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-https://api.yourdomain.com}"
+          export VITE_API_BASE_URL="${VITE_API_BASE_URL:-https://api.wealthos.devenlight.com}"
           npm run build
 
       - name: Upload frontend artifact
