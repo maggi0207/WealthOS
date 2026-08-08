@@ -1,5 +1,8 @@
 # Hostinger VPS deploy — same pattern as maggi0207/layaKPI-Tracker.
-# Reuse repo/org secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY
+# Secrets required:
+#   VPS_HOST, VPS_USER
+#   VPS_SSH_KEY_B64  = base64 of the PRIVATE key file (recommended)
+#   OR VPS_SSH_KEY   = raw PRIVATE key (must start with -----BEGIN ...)
 # Host Nginx owns 80/443; Docker publishes only loopback 3000 (UI) + 8081 (API).
 name: Deploy to VPS
 
@@ -19,12 +22,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Prepare SSH private key
+        shell: bash
+        env:
+          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          if [ -n "${VPS_SSH_KEY_B64:-}" ]; then
+            echo "$VPS_SSH_KEY_B64" | base64 -d > ~/.ssh/wealthos_deploy
+          elif [ -n "${VPS_SSH_KEY:-}" ]; then
+            printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/wealthos_deploy
+          else
+            echo "Missing secret: set VPS_SSH_KEY_B64 (preferred) or VPS_SSH_KEY"
+            echo "VPS_SSH_KEY must be the PRIVATE key (-----BEGIN ...), NOT ssh-ed25519 AAAAC3..."
+            exit 1
+          fi
+
+          chmod 600 ~/.ssh/wealthos_deploy
+
+          # Fail fast if someone pasted the public key by mistake
+          if grep -qE '^ssh-(ed25519|rsa|dss) ' ~/.ssh/wealthos_deploy; then
+            echo "ERROR: secret looks like a PUBLIC key (starts with ssh-ed25519/ssh-rsa)."
+            echo "GitHub needs the PRIVATE key file (-----BEGIN OPENSSH PRIVATE KEY-----)."
+            exit 1
+          fi
+
+          if ! grep -q 'BEGIN .*PRIVATE KEY' ~/.ssh/wealthos_deploy; then
+            echo "ERROR: secret is not a valid private key (no BEGIN PRIVATE KEY header)."
+            exit 1
+          fi
+
+          # Validate OpenSSH can parse it
+          ssh-keygen -y -f ~/.ssh/wealthos_deploy >/dev/null
+
+          # Expose for appleboy (docker action reads workspace path)
+          cp ~/.ssh/wealthos_deploy "$GITHUB_WORKSPACE/wealthos_deploy"
+          chmod 600 "$GITHUB_WORKSPACE/wealthos_deploy"
+
       - name: Deploy application using SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key_path: wealthos_deploy
           port: 22
           timeout: 60s
           command_timeout: 30m
